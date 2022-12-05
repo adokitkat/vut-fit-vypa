@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+# Project name: Compiler Implementation for VYPlanguage Programming Language
+# Authors: Adam Múdry (xmudry01), Daniel Paul (xpauld00)
+
+python3 vypa_compiler/compiler.py "$@"
