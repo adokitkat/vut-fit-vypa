@@ -11,9 +11,11 @@ Main source file
 
 import sys
 
+import ply.lex as lex
+
 from vypa_compiler.internals._utils import eprint, ExitCode
-from vypa_compiler.internals._lexer import vypa_lexer
-from vypa_compiler.internals._parser import vypa_parser
+from vypa_compiler.internals._lexer import make_lexer
+from vypa_compiler.internals._parser import make_parser
 
 __author__ = "Adam Múdry and Daniel Paul"
 __copyright__ = "Copyright 2022, VYPa Compiler Project 2022"
@@ -24,6 +26,8 @@ __version__ = "0.0.1"
 
 SOURCE_FILE = ""
 OUTPUT_FILE = "out.vc"
+
+DEBUG = True
 
 def main():
     args = sys.argv[1:]
@@ -45,8 +49,18 @@ def main():
         eprint(f"Error: {e}")
         exit(ExitCode.ERR_INTERNAL)
 
-    lexer = vypa_lexer
-    parser = vypa_parser
+    lexer = make_lexer()
+    if DEBUG == True:
+        print("Tokens:")
+        lexer.input(input_data)
+        while True:
+            tok = lexer.token()
+            if not tok: 
+                break
+            print(tok)
+        print("")
+    
+    parser = make_parser()
     parser.parse(input_data)
 
 if __name__ == "__main__":

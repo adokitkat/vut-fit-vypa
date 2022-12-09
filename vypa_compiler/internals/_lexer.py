@@ -24,7 +24,7 @@ reserved = (
 
 tokens = reserved + (
     # Literals
-    "ID", "TYPEID", "INT_CONST", "STRING_CONST",
+    "ID", "INT_CONST", "STRING_CONST",
 
     # Operators
     # +, -, *, /
@@ -37,17 +37,11 @@ tokens = reserved + (
     # Assignment
     'EQUALS', 
 
-    # Ternary operator (?)
-    'TERNARY',  # TODO: Is it even used?
-
     # Delimeters
     'LPAREN', 'RPAREN',
     'LBRACKET', 'RBRACKET',
     'LBRACE', 'RBRACE',
     'COMMA', 'PERIOD', 'SEMI', 'COLON',
-
-    # Comments
-    'COMMENT', 'MULTI_COMMENT' # TODO: Are these needed when they're ignored?
 )
 
 def t_INT_CONST(t):
@@ -77,8 +71,6 @@ t_EQ = r'=='
 t_NE = r'!='
 
 t_EQUALS = r'='
-
-t_TERNARY = r'\?' # TODO: Is it even used?
 
 t_LPAREN   = r'\('
 t_RPAREN   = r'\)'
@@ -121,7 +113,9 @@ def t_error(t):
     # TODO: Use t.lexer.lineno to indicade line number of illegal input input?
     #       Quit after error and return ERR_LEX?
 
-vypa_lexer = lex.lex(reflags=re.UNICODE|re.VERBOSE)
+def make_lexer():
+     lexer = lex.lex(reflags=re.UNICODE|re.VERBOSE)
+     return lexer
 
 if __name__ == "__main__":
-    lex.runmain(vypa_lexer)
+    lex.runmain(make_lexer())
