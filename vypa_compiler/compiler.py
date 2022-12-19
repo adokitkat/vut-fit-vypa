@@ -61,7 +61,8 @@ def main():
         print("")
     
     parser = make_parser()
-    parser.parse(input_data)
+    parsed = parser.parse(input_data, tracking=True)
+    print(parsed)
 
 if __name__ == "__main__":
     main()

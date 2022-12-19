@@ -15,6 +15,10 @@ from vypa_compiler.internals._utils import eprint
 Lexer implementation
 """
 
+def find_column(input, token):
+    line_start = input.rfind('\n', 0, token.lexpos) + 1
+    return (token.lexpos - line_start) + 1
+
 t_ignore = ' '
 
 # Reserved keywords
@@ -84,8 +88,8 @@ t_SEMI     = r';'
 t_COLON    = r':'
 
 def t_NEWLINE(t):
-    r'\n'
-    t.lexer.lineno += 1
+    r'\n+'
+    t.lexer.lineno += len(t.value)
     pass
 
 reserved_map = {}
@@ -104,11 +108,11 @@ def t_MULTI_COMMENT(t):
 
 def t_COMMENT(t):
     r'//.*'
-    t.lexer.lineno += 1
+    #t.lexer.lineno += 1
     pass
 
 def t_error(t):
-    eprint('Illegal input: "%s"' % repr(t.value[0]))
+    eprint('Lexical error | Line: %d | Symbol: %s | %s' % (t.lineno, repr(t.value[0]), find_column(t.value[0], t))) 
     t.lexer.skip(1)
     # TODO: Use t.lexer.lineno to indicade line number of illegal input input?
     #       Quit after error and return ERR_LEX?

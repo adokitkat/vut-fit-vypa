@@ -16,93 +16,230 @@ Parser implementation
 # TODO
 
 precedence = (
-
+    ('left', 'LOR'),
+    ('left', 'LAND'),
+    ('left', 'EQ', 'NE'),
+    ('left', 'LT', 'LE', 'GT', 'GE'),
+    ('left', 'PLUS', 'MINUS'),
+    ('left', 'TIMES', 'DIVIDE'),
+    ('nonassoc', 'LNOT'),
+    ('left', 'PERIOD'),
+    ('nonassoc', 'LPAREN', 'RPAREN'),
+    ('nonassoc', 'NEW')
 )
 
-def p_expr_list(self,p):
-    '''expr_list : expr_list expr
-                 | expr'''
- 
-def p_expr(self,p):
-    'expr : e EQUAL'
+def p_start(p):
+    """start : program"""
+    p[0] = ("start", p[1])
 
-def p_e(self,p):
-    '''e : e PLUS t
-         | e MINUS t
-         | t'''      
- 
-def p_t(self,p):
-    '''t : LBRACE e RBRACE
-         | INT_CONST'''
-
-def p_func_decl(p):
-    'func_decl : type ID LPAREN params LPAREN LBRACE stmt RBRACE'
-
-def p_type(p):
-    '''type : VOID
-            | actual_type'''
-
-def p_actual_type(p):
-    '''actual_type : INT 
-                   | STRING 
-                   | ID'''
-
-def p_params(p):
-    '''params : VOID 
-              | actual_param'''
-
-def p_actual_param(p):
-    'actual_param : actual_type ID multiple_params'
-
-def p_multiple_params(p):
-    '''multiple_params : COLON actual_param
-                       | empty'''
-
-def p_expression(p):
-    pass
-
-def p_stmt(p):
-    '''stmt : actual_type ID SEMI
-            | actual_type ID EQUALS INT_CONST SEMI
-            | actual_type ID EQUALS STRING_CONST SEMI'''
-
-def p_binary_operators(p):
-    '''expression : expression PLUS term
-                  | expression MINUS term
-       term       : term TIMES factor
-                  | term DIVIDE factor'''
-
-    if p[2] == '+':
-        p[0] = p[1] + p[3]
-    elif p[2] == '-':
-        p[0] = p[1] - p[3]
-    elif p[2] == '*':
-        p[0] = p[1] * p[3]
-    elif p[2] == '/':
-        p[0] = p[1] / p[3]
-
-def p_term_factor(p):
-    'term : factor'
-    p[0] = p[1]
-
-def p_factor_num(p):
-    'factor : INT_CONST'
-    p[0] = p[1]
-
-def p_factor_expr(p):
-    'factor : LPAREN expression RPAREN'
-    p[0] = p[2]
+def p_program(p):
+    '''program : func_def program
+               | class_def program
+               | empty''' 
+    if len(p) == 3:
+        p[0] = ("program", p[1], p[2])
 
 def p_empty(p):
     'empty :'
     pass
 
+# FUNCTION DEFINITION
+def p_func_def(p):
+    '''func_def : func_header func_body'''
+    p[0] = ("function", "definition", p[1], p[2])
+
+def p_func_header(p):
+    '''func_header : var_type ID LPAREN param_list RPAREN'''
+    p[0] = ("function", "header", p[1], p[2], p[4])
+
+def p_func_body(p):
+    '''func_body : LBRACE statement RBRACE'''
+    p[0] = ("function", "body", p[2])
+
+def p_param_list(p):
+    '''param_list : VOID
+                  | func_param'''
+    p[0] = ("function", "parameter-list", p[1])
+
+def p_func_param(p):
+    '''func_param : func_param_def next_param'''
+    p[0] =  ("function", "parameters", p[1], p[2])
+
+def p_func_param_def(p):
+    '''func_param_def : var_type ID'''
+    p[0] = ("function", "parameter-definition", p[1], p[2])
+
+def p_next_param(p):
+    '''next_param : COMMA func_param
+                  | empty'''
+    if len(p) == 3:
+        p[0] = ("function", "next-parameter", p[2])
+    else:
+        p[0] = ("function", "next-parameter", None)
+
+# CLASS DEFINITION
+def p_class_def(p):
+    '''class_def : CLASS ID COLON ID class_body'''
+    p[0] = ("class", "definition", p[2], p[4], p[5])
+
+def p_class_body(p):
+    '''class_body : LBRACE class_member_list RBRACE'''
+    p[0] = ("class", "body", p[2])
+
+# ("class" , "definition" , int id, void Shape, string toString, None
+def p_class_member_list(p):
+    '''class_member_list : class_member'''
+    p[0] = ("class", "member-list", p[1])
+
+def p_class_member_list_none(p):
+    '''class_member_list : empty'''
+    p[0] = ("class", "member-list", None)
+
+def p_class_member(p):
+    '''class_member : class_member_def class_next_member'''
+    p[0] = ("class", "members", p[1], p[2])
+
+def p_class_member_def(p):
+    '''class_member_def : var_def
+                        | func_def'''
+    p[0] = ("class", "member-definition", p[1])
+
+def p_class_next_member(p):
+    '''class_next_member : class_member'''
+    p[0] = ("class", "next-member", p[1])
+
+def p_class_next_member_none(p):
+    '''class_next_member : empty'''
+    p[0] = ("class", "next-member", None)
+    
+# VARIABLE TYPE TODO: REMOVE VOID? 
+def p_var_type(p):
+    '''var_type : INT
+                | STRING
+                | VOID
+                | ID'''
+    p[0] = ("var-type", p[1])
+
+# STATEMENTS
+def p_statement(p): # TODO
+    '''statement : var_def statement
+                | var_assignment statement
+                | expr SEMI statement
+                | RETURN expr SEMI statement
+                | WHILE LPAREN expr RPAREN LBRACE statement RBRACE statement
+                | IF LPAREN expr RPAREN LBRACE statement RBRACE ELSE LBRACE statement RBRACE statement
+                | THIS PERIOD ID EQUALS expr SEMI statement
+                | ID PERIOD ID EQUALS expr SEMI statement
+                | empty '''
+    #p[0] = p[1]
+    
+def p_var_assignment(p):
+    'var_assignment : ID EQUALS expr SEMI'
+    p[0] = p[3]
+
+# DEFVAR
+def p_var_def(p):
+    'var_def : var_type ID multiple_var_def' 
+    p[0] = (p[1], p[2], p[3])
+
+def p_multiple_var_def(p):
+    '''multiple_var_def : SEMI
+                        | COMMA ID multiple_var_def
+    '''
+
+################ EXPRESSIONS #################
+def p_expr_paren(p):
+    '''expr : LPAREN expr RPAREN'''
+    p[0] = ("expression", "parentheses", p[2])
+
+def p_expr_value(p):
+    '''expr : ID
+            | INT_CONST
+            | STRING_CONST'''
+    p[0] = ("expression", "value", p[1])
+
+def p_expr_arithmetic_operation_unary(p):
+    '''expr : MINUS expr'''
+    p[0] = ("expression", "arithmetic-unary", p[2], p[1], p[3])
+
+def p_expr_arithmetic_operation(p):
+    '''expr : expr PLUS expr
+            | expr MINUS expr
+            | expr TIMES expr
+            | expr DIVIDE expr'''
+    p[0] = ("expression", "arithmetic-binary", p[2], p[1], p[3])
+
+def p_expr_logical_operation_unary(p):
+    '''expr : LNOT expr'''
+    p[0] = ("expression", "logical-unary", p[1], p[2])
+
+def p_expr_logical_operation(p):
+    '''expr : expr LOR expr
+            | expr LAND expr'''
+    p[0] = ("expression", "logical-binary", p[2], p[1], p[3])
+
+def p_expr_relational_operation(p):
+    '''expr : expr LT expr
+            | expr LE expr
+            | expr GE expr
+            | expr GT expr
+            | expr EQ expr
+            | expr NE expr'''
+    p[0] = ("expression", "relational", p[2], p[1], p[3])
+            
+def p_expr_cast(p):
+    '''expr : LPAREN INT RPAREN expr
+            | LPAREN STRING RPAREN expr'''
+    p[0] = ("expression", "cast", p[2], p[4])
+
+# new Rectangle, this.id, rec.value(), this.value(), super.value()
+def p_expr_class_new(p):
+    '''expr : NEW ID'''
+    p[0] = ("expression", "class-new", p[2])
+
+def p_expr_class_operations(p):
+    '''expr : ID PERIOD expr
+            | THIS PERIOD expr
+            | SUPER PERIOD expr'''
+    p[0] = ("expression", "class-op", p[1], p[3])
+
+def p_expr_function_call(p):
+    '''expr : ID LPAREN expr_list RPAREN
+            | ID LPAREN RPAREN'''
+    if len(p) == 5:
+        p[0] = ("expression", "function-call", p[1], p[3])
+    else:
+        p[0] = ("expression", "function-call", p[1], None)
+
+# value(a,)
+def p_expr_list(p): 
+    '''expr_list : expr next_expr'''
+
+
+def p_next_expr(p):
+    '''next_expr : COMMA expr_list
+                | empty'''
+
+# def p_statements_block(p):
+#      "statements: LBRACE new_scope statements RBRACE"""
+#      # Action code
+#      ...
+#      pop_scope()        # Return to previous scope
+ 
+#  def p_new_scope(p):
+#      "new_scope :"
+#      # Create a new scope for local variables
+#      s = new_scope()
+#      push_scope(s)
+#      ...
+
 def p_error(p):
-    ''
-    eprint("Syntax error in input!")
+    ''''''
+    eprint("Syntax error in input! | Type: %s | Line: %d | Value: %s" % (p.type, p.lineno, p.value))
+
 
 def make_parser():
-    parser = yacc.yacc()
+    parser = yacc.yacc(tabmodule="parse_table", outputdir="vypa_compiler/generated")
     return parser
 
 if __name__ == "__main__":

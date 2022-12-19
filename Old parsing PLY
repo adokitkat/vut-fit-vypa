@@ -1,0 +1,352 @@
+#####
+def p_expr_list(self,p):
+    '''expr_list : expr_list expr
+                | expr'''
+ 
+def p_expr(self,p):
+    'expr : e EQUAL'
+
+def p_e(self,p):
+    '''e : e PLUS t
+         | e MINUS t
+         | t'''      
+ 
+def p_t(self,p):
+    '''t : LBRACE e RBRACE
+         | INT_CONST'''
+
+def p_func_decl(p):
+    'func_decl : type ID LPAREN params LPAREN LBRACE stmt RBRACE'
+
+def p_type(p):
+    '''type : VOID
+            | actual_type'''
+
+def p_actual_type(p):
+    '''actual_type : INT 
+                   | STRING 
+                   | ID'''
+
+def p_params(p):
+    '''params : VOID 
+              | actual_param'''
+
+def p_actual_param(p):
+    'actual_param : actual_type ID multiple_params'
+
+def p_multiple_params(p):
+    '''multiple_params : COLON actual_param
+                       | empty'''
+
+def p_expression(p):
+    pass
+
+def p_stmt(p):
+    '''stmt : actual_type ID SEMI
+            | actual_type ID EQUALS INT_CONST SEMI
+            | actual_type ID EQUALS STRING_CONST SEMI'''
+
+def p_binary_operators(p):
+    '''expression : expression PLUS term
+                  | expression MINUS term
+       term       : term TIMES factor
+                  | term DIVIDE factor'''
+
+    if p[2] == '+':
+        p[0] = p[1] + p[3]
+    elif p[2] == '-':
+        p[0] = p[1] - p[3]
+    elif p[2] == '*':
+        p[0] = p[1] * p[3]
+    elif p[2] == '/':
+        p[0] = p[1] / p[3]
+
+def p_term_factor(p):
+    'term : factor'
+    p[0] = p[1]
+
+def p_factor_num(p):
+    'factor : INT_CONST'
+    p[0] = p[1]
+
+def p_factor_expr(p):
+    'factor : LPAREN expression RPAREN'
+    p[0] = p[2]
+
+def p_empty(p):
+    'empty :'
+    pass
+
+####
+def p_class_def(p):
+    'class_def : CLASS ID COLON ID class_body' #Classheader
+    p[0] = p[5]
+
+#def p_class_header(p):
+#    'class_header : CLASS ID COLON ID'
+#    pass 
+
+def p_class_body(p):
+    'class_body : LBRACE class_members RBRACE'
+    p[0] = p[2]
+
+def p_class_members(p):
+    '''class_members : field_def
+                    | func_def'''
+    p[0] = p[1]
+
+def p_field_def(p):
+    'field_def : var_type ID COLON ID SEMI' #Multiplefielddef
+    p[0] = (p[1], p[3]) 
+
+#def p_multiple_field_def(p):
+#    'multiple_field_def : COLON ID'
+#    p[0] = p[2]
+
+def p_var_def(p):
+    'var_def : var_type ID COLON ID SEMI' #Multiplevardef
+    p[0] = (p[1], p[2], p[3])
+
+#def p_multiple_var_def(p):
+#    'multiple_var_def : COLON ID'
+#    p[0] = p[2]
+
+def p_statement(p):
+    '''statement : if_else_block
+                |   while_block
+                |   var_assignment
+                |   instance_assignment
+                |   var_def
+                |   return
+                |   expr SEMI'''
+    p[0] = p[1]
+
+def p_var_assignment(p):
+    'var_assignment : ID EQUALS expr SEMI'
+    p[0] = p[3]
+
+def p_instance_assignment(p):
+    'instance_assignment : instance_expr EQUALS expr SEMI'
+    p[0] = (p[1], p[3])
+
+def p_return(p):
+    'return : RETURN expr SEMI'
+    p[0] = p[2]
+
+def p_code_block(p):
+    'code_block : LBRACE statement RBRACE'
+    p[0] = p[2]
+
+def p_if_else_block(p):
+    'if_else_block : if_part else_part'
+    p[0] = (p[1], p[2])
+
+# From here not GPT
+def p_if_expr(p):
+    'if_expr : IF LPAREN expr RPAREN'
+    p[0] = p[3]
+
+def p_if_part(p):
+    'if_part : if_expr code_block'
+    p[0] = (p[1], p[2])
+
+def p_else_part(p):
+    'else_part : ELSE code_block'
+    p[0] = (p[1], p[2])
+
+def p_while_expr(p):
+    'while_expr : WHILE LPAREN expr RPAREN'
+    p[0] = p[3]
+
+def p_while_block(p):
+    'while_block : while_expr code_block'
+    p[0] = (p[1], p[2])
+
+
+### GPT
+def p_expr_cast_expr(p):
+    'expr :  LPAREN cast RPAREN expr'
+    p[0] = (p[2], p[4])
+
+def p_cast(p):
+    '''cast : INT 
+            | STRING 
+            | ID'''
+    p[0] = p[1]
+
+def p_expr_bracket_expr(p):
+    'expr : LPAREN expr RPAREN'
+    p[0] = p[2]
+
+def p_expr_negative_expr(p):
+    'expr : MINUS expr'
+    p[0] = p[2]
+
+def p_expr_negation_expr(p):
+    'expr : LNOT expr'
+    p[0] = p[2]
+
+def p_expr_muldiv_expr(p):
+    'expr : expr muldiv_operator expr'
+    p[0] = (p[1], p[2], p[3])
+
+def p_muldiv_operator(p):
+    '''muldiv_operator : TIMES
+                        | DIVIDE'''
+    p[0] = p[1]
+
+def p_expr_plusminus_expr(p):
+    'expr : expr plusmin_operator expr'
+    p[0] = (p[1], p[2], p[3])
+
+def p_plusmin_operator(p):
+    '''plusmin_operator : PLUS
+                        | MINUS'''
+    p[0] = p[1]
+
+def p_expr_comparison_expr(p):
+    'expr : expr comparison_operator expr'
+    p[0] = (p[1], p[2], p[3])
+
+def p_comparison_operator(p):
+    '''comparison_operator : LT
+                            | LE
+                            | GT
+                            | GE'''
+    p[0] = p[1]
+
+def p_expr_equality_expr(p):
+    'expr : expr equality_operator expr'
+    p[0] = p[1], p[2], p[3]
+
+def p_equality_operator(p):
+    '''equality_operator : EQ
+                        | NE'''
+    p[0] = p[1]
+
+def p_expr_and_expr(p):
+    'expr : expr LAND expr'
+    p[0] = (p[1], p[3])
+
+def p_expr_or_expr(p):
+    'expr : expr LOR expr'
+    p[0] = (p[1], p[3])
+
+def p_expr_instance_expr(p):
+    'expr : instance_expr'
+    p[0] =  p[1]
+
+def p_expr_new_expr(p):
+    'expr : instance_creation'
+    p[0] = p[1]
+
+def p_expr_function_expr(p):
+    'expr : function_call'
+    p[0] = p[1]
+
+def p_expr_literal_expr(p):
+    '''expr : INT_CONST
+            | STRING_CONST'''
+    p[0] = p[1]
+
+def p_expr_variable_expr(p):
+    'expr : ID'
+    p[0] = p[1]
+
+def p_first_instance(p):
+    '''first_instance : reference
+                    | function_call'''
+    p[0] =  p[1]
+
+def p_reference(p):
+    '''reference : SUPER
+                | THIS
+                | ID'''
+    p[0] = p[1]
+
+def p_instance_expr(p):
+    'instance_expr : first_instance nested_object'
+    p[0] = (p[1], p[2])
+
+def p_instance_creation(p):
+    'instance_creation : NEW ID'
+    p[0] = p[2]
+
+def p_nested_object(p):
+    '''nested_object : final_field_expr next_final
+                    | final_method_expr next_final'''
+    p[0] = (p[1], p[2])
+
+def p_next_final(p):
+    '''next_final : final_field_expr
+                    | final_method_expr'''
+    p[0] = p[1]
+
+def p_final_field_expr(p):
+    'final_field_expr : PERIOD ID'
+    p[0] =  p[2]
+
+def p_final_method_expr(p):
+    'final_method_expr : PERIOD function_call'
+    p[0] = p[2]
+
+def p_function_call(p):
+    'function_call : ID LPAREN expr_list RPAREN'
+    p[0] = (p[1], p[3])
+
+def p_expr_list(p):
+    '''expr_list : expr next_expr''' # *
+    p[0] = (p[1], p[2])
+
+def p_next_expr(p):
+    'next_expr : COMMA expr'
+    p[0] = p[2]
+
+def p_var_type(p):
+    '''var_type : INT
+                    | STRING
+                    | VOID
+                    | ID'''
+    p[0] = p[1]
+
+def p_param_list(p):
+    '''param_list : VOID
+                    | func_param'''
+    p[0] = p[1]
+
+def p_func_param_def(p):
+    'func_param_def : var_type ID'
+    p[0] = (p[1], p[2])
+
+def p_func_param(p):
+    'func_param : func_param_def next_param'# *
+    p[0] =  (p[1], p[2])
+
+def p_next_param(p):
+    'next_param : COMMA func_param_def'
+    p[0] = p[2]
+
+
+
+
+
+    ###### EXPR #
+    def p_expr(p):
+    '''expr : LPAREN expr RPAREN
+            | ID
+            | INT_CONST
+            | STRING_CONST
+            | expr PLUS expr
+            | expr MINUS expr
+            | expr TIMES expr
+            | expr DIVIDE expr
+            | LNOT expr
+            | expr LOR expr
+            | expr LAND expr
+            | expr LT expr
+            | expr LE expr
+            | expr GE expr
+            | expr GT expr
+            | expr EQ expr
+            | expr NE expr
+    '''
