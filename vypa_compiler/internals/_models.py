@@ -141,8 +141,8 @@ class Program:
 
 def add_built_in_functions_to_symtable():
     symbol_table.append(Scope()) # global scope
-    symbol_table[0].add(Function(name='readInt', arguments=[], return_type='int', body=None))
-    symbol_table[0].add(Function(name='readString', arguments=[], return_type='string', body=None))
-    symbol_table[0].add(Function(name='length', arguments=[Variable(var_type='string', name='s')], return_type='int', body=None))
-    symbol_table[0].add(Function(name='subStr', arguments=[Variable(var_type='string',name='s'),Variable(var_type='int',name='i'),Variable(var_type='int',name='n')], return_type='string', body=None))
+    symbol_table[0].add('readInt', Function(name='readInt', arguments=[], return_type='int', body=None))
+    symbol_table[0].add('readString', Function(name='readString', arguments=[], return_type='string', body=None))
+    symbol_table[0].add('length', Function(name='length', arguments=[Variable(var_type='string', name='s')], return_type='int', body=None))
+    symbol_table[0].add('subStr', Function(name='subStr', arguments=[Variable(var_type='string',name='s'),Variable(var_type='int',name='i'),Variable(var_type='int',name='n')], return_type='string', body=None))
     #Function(name='print',arguments=["?"], return_type='void', body=None)

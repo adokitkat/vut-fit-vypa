@@ -137,8 +137,12 @@ def p_statement(p): # TODO
         p[0] = None
 
 def p_statement_new_scope(p):
-    '''statement_new_scope : LBRACE statement RBRACE'''
-    p[0] = ("statement-scope",  p[2])
+    '''statement_new_scope : LBRACE statement RBRACE statement_scope_end'''
+    p[0] = ("statement-scope",  p[2], p[4])
+
+def p_statement_scope_end(p):
+    '''statement_scope_end : empty'''
+    p[0] = ("statement-scope-end", None)
 #      # Action code
 #      ...
 #      pop_scope()        # Return to previous scope
@@ -209,22 +213,29 @@ def p_expr_paren(p):
     '''expr : LPAREN expr RPAREN'''
     p[0] = ("expression-parentheses", p[2])
 
-def p_expr_value(p):
-    '''expr : ID
-            | INT_CONST
-            | STRING_CONST'''
-    p[0] = ("expression-value", p[1])
+def p_expr_value_id(p):
+    '''expr : ID'''
+    p[0] = ("expression-value", 'identifier', p[1])
+
+def p_expr_value_int(p):
+    '''expr : INT_CONST'''
+    p[0] = ("expression-value", 'int', p[1])
+
+def p_expr_value_string(p):
+    '''expr : STRING_CONST'''
+    p[0] = ("expression-value", 'string', p[1])
+    
 
 def p_expr_arithmetic_operation_unary(p):
     '''expr : MINUS expr'''
-    p[0] = ("expression-arithmetic-unary", p[2], p[1], p[3])
+    p[0] = ("expression-arithmetic-unary", p[1], p[2])#p[2], p[1]), p[3]) # ???
 
 def p_expr_arithmetic_operation(p):
     '''expr : expr PLUS expr
             | expr MINUS expr
             | expr TIMES expr
             | expr DIVIDE expr'''
-    p[0] = ("expression-arithmetic-binary", p[2], p[1], p[3])
+    p[0] = ("expression-arithmetic-binary",p[2], p[1], p[3])# p[1], p[3], p[2]) # 
 
 def p_expr_logical_operation_unary(p):
     '''expr : LNOT expr'''
@@ -233,7 +244,7 @@ def p_expr_logical_operation_unary(p):
 def p_expr_logical_operation(p):
     '''expr : expr LOR expr
             | expr LAND expr'''
-    p[0] = ("expression-logical-binary", p[2], p[1], p[3])
+    p[0] = ("expression-logical-binary", p[2], p[1], p[3]) # Možno zmeniť na postfix?
 
 def p_expr_relational_operation(p):
     '''expr : expr LT expr

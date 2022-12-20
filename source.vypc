@@ -14,14 +14,42 @@ void Shape(int a, int b) {
 string toString(void) { return "instance of Shape " + (string)(this.id); }
 }
 class Rectangle : Shape {
-int height, width;
-string toString(void) { return super.toString()
-+ " - rectangle " + (string)(this.area()); }
-int area(void) { return this.height * this.width; }
+  int height, width;
+  string toString(void) { return super.toString()
+    + " - rectangle " + (string)(this.area()); }
+  int area(void) { return this.height * this.width; }
 }
+
+
 void main(void) {
-Rectangle r; r = new Rectangle;
-r.id = 42; r.width = readInt(); r.height = readInt();
-Shape s; s = r;
-print(s.toString());
+ 
+  r.width = readInt(); r.height = readInt();
+  Shape s; 
+  s = r;
+  Rectangle r; 
+  
+  r = new Rectangle;
+  r.id = 42;
+  s = r.id;
+  s = this.id;
+  a = 1+3*4-7/2-1;
+  b = "Hello" + "World" + (string) 1;
+  c = function(a,b,c);
+  d = a;
+  e = -4;
+  function(a,b,c,d);
+
+
+
+  while(i>0){
+  i = i+1;
+  }
+
+  if (r.id == 42){
+    print(42);
+  } else {
+    print("Not 42");
+  }
+
+  print(s.toString());
 } // end of main
