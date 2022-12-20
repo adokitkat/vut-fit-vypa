@@ -1,4 +1,15 @@
 from vypa_compiler.internals._utils import eprint, ExitCode
+from vypa_compiler.compiler import symbol_table
+from vypa_compiler.internals._models import Function
+
+built_in_functions = ['readInt','readString','length','subStr','print']
+def generate_functions():
+    for key, value in symbol_table[0].items():
+        if key not in built_in_functions and isinstance(value, Function):
+            #generate(key.body)
+            pass
+
+
 
 #'expression-cast', 'expression-list', 'next-expression'
 
