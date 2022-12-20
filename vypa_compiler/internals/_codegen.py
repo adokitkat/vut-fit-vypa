@@ -1,15 +1,18 @@
-from vypa_compiler.internals._utils import eprint, ExitCode
-from vypa_compiler.compiler import symbol_table
-from vypa_compiler.internals._models import Function
+from vypa_compiler.internals._utils import eprint, ExitCode, sublist_lookup
+from vypa_compiler.internals._models import symbol_table, Function
+import pprint
 
 built_in_functions = ['readInt','readString','length','subStr','print']
 def generate_functions():
-    for key, value in symbol_table[0].items():
+    for key, value in symbol_table[0].scope.items():
         if key not in built_in_functions and isinstance(value, Function):
-            #generate(key.body)
-            pass
+            print(f"Function {value.name}")
+            generate(value.body)
+            
 
-
+def generate(body):
+    for stmt in body:
+        pprint.pprint(stmt)
 
 #'expression-cast', 'expression-list', 'next-expression'
 

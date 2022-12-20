@@ -54,21 +54,12 @@ class Function:
         else:
             self.process_function_arguments(arguments)
         self.body = body
-        # Built-in functions have no body
-        if body:
-            self.process_function_body()
 
     def process_function_arguments(self, sublist):
         if (self.class_this is not None):
             self.arguments.append(self.class_this)
         for arg in sublist:
             self.arguments.append(Variable(var_type=arg[1][1], name=arg[2]))
-
-    def process_function_body(self):
-        statements = sublist_lookup(self.body,'statement')
-        print("STATEMENTS")
-        for statement in statements:
-            print(statement)
 
     def __repr__(self):
         return f"Function: ({self.name=}, {self.return_type=}, args={['this=' + x.name if isinstance(x, Class) else x for x in self.arguments]})"

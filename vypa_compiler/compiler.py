@@ -19,7 +19,7 @@ from vypa_compiler.internals._utils import eprint, ExitCode, sublist_lookup # ,c
 from vypa_compiler.internals._lexer import make_lexer
 from vypa_compiler.internals._parser import make_parser
 from vypa_compiler.internals._models import symbol_table, add_built_in_functions_to_symtable, Program
-
+from vypa_compiler.internals._codegen import generate_functions
 
 __author__ = "Adam Múdry and Daniel Paul"
 __copyright__ = "Copyright 2022, VYPa Compiler Project 2022"
@@ -77,6 +77,7 @@ def main():
     print(symbol_table)
     #print([x.symtable for x in program.classes])
     #print(list(symbol_table[0].scope.values())[0].symtable)
+    generate_functions()
 
 if __name__ == "__main__":
     main()
