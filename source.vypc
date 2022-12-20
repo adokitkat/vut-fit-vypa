@@ -1,7 +1,16 @@
 /* Program 4: Program with Classes and Objects */
 class Shape : Object {
 int id;
-void Shape(void) { print("constructor of Shape"); }
+int id2;
+void Shape(int a, int b) {
+    this.id;
+    this.id = a;
+    print("constructor of Shape"); 
+    this.toString();
+    int x;
+    x = this.id;
+    x = 5;
+}
 string toString(void) { return "instance of Shape " + (string)(this.id); }
 }
 class Rectangle : Shape {

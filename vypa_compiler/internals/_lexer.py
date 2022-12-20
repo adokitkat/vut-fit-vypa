@@ -8,7 +8,7 @@ import re
 
 import ply.lex as lex
 
-from vypa_compiler.internals._utils import eprint
+from vypa_compiler.internals._utils import eprint, ExitCode
 
 """VYPa Compiler Project 2022
 
@@ -113,9 +113,10 @@ def t_COMMENT(t):
 
 def t_error(t):
     eprint('Lexical error | Line: %d | Symbol: %s | %s' % (t.lineno, repr(t.value[0]), find_column(t.value[0], t))) 
-    t.lexer.skip(1)
+    #t.lexer.skip(1)
     # TODO: Use t.lexer.lineno to indicade line number of illegal input input?
     #       Quit after error and return ERR_LEX?
+    exit(ExitCode.ERR_LEX)
 
 def make_lexer():
      lexer = lex.lex(reflags=re.UNICODE|re.VERBOSE)
