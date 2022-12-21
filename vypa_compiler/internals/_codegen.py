@@ -1,19 +1,136 @@
 from vypa_compiler.internals._utils import eprint, ExitCode, sublist_lookup
 from vypa_compiler.internals._models import symbol_table, Function
-import pprint
+import networkx as nx
+import matplotlib.pyplot as plt
+
+def visualize_tree(root_node):
+    G = nx.Graph()
+    # Create a queue to hold nodes in breadth-first order
+    queue = [(root_node, None)]
+    
+    # Add nodes to the graph
+    while queue:
+        node, parent = queue.pop(0)
+        G.add_node(node.name)#, type=node.type, value=node.value)
+        if parent:
+            G.add_edge(parent, node)
+        if node.left:
+            queue.append((node.left, node))
+        if node.right:
+            queue.append((node.right, node))
+    
+    # Draw the graph
+    pos = nx.drawing.layout.kamada_kawai_layout(G)
+    nx.draw(G, pos, with_labels=True, node_size=1500, font_size=8, arrowsize=20)
+    plt.show()
+
+
+
+class Node:
+    def __init__(self, name, left= None, right = None, type = None, value= None ):
+        self.name = name
+        self.left  = left
+        self.right = right
+        self.type = type
+        self.value = value
+
+    def insert_left(self,node):
+        self.left = node
+        return self.left
+
+    def insert_right(self,node):
+        self.right = node
+        return self.right
+
+    def display(self):
+        lines, *_ = self._display_aux()
+        for line in lines:
+            print(line)
+
+    def _display_aux(self):
+        """Returns list of strings, width, height, and horizontal coordinate of the root."""
+        # No child.
+        if self.right is None and self.left is None:
+            line = '%s' % str(self)
+            width = len(line)
+            height = 1
+            middle = width // 2
+            return [line], width, height, middle
+
+        # Only left child.
+        if self.right is None:
+            lines, n, p, x = self.left._display_aux()
+            s = '%s' % str(self)
+            u = len(s)
+            first_line = (x + 1) * ' ' + (n - x - 1) * '_' + s
+            second_line = x * ' ' + '/' + (n - x - 1 + u) * ' '
+            shifted_lines = [line + u * ' ' for line in lines]
+            return [first_line, second_line] + shifted_lines, n + u, p + 2, n + u // 2
+
+        # Only right child.
+        if self.left is None:
+            lines, n, p, x = self.right._display_aux()
+            s = '%s' % str(self)
+            u = len(s)
+            first_line = s + x * '_' + (n - x) * ' '
+            second_line = (u + x) * ' ' + '\\' + (n - x - 1) * ' '
+            shifted_lines = [u * ' ' + line for line in lines]
+            return [first_line, second_line] + shifted_lines, n + u, p + 2, u // 2
+
+        # Two children.
+        left, n, p, x = self.left._display_aux()
+        right, m, q, y = self.right._display_aux()
+        s = '%s' % str(self)
+        u = len(s)
+        first_line = (x + 1) * ' ' + (n - x - 1) * '_' + s + y * '_' + (m - y) * ' '
+        second_line = x * ' ' + '/' + (n - x - 1 + u + y) * ' ' + '\\' + (m - y - 1) * ' '
+        if p < q:
+            left += [n * ' '] * (q - p)
+        elif q < p:
+            right += [m * ' '] * (p - q)
+        zipped_lines = zip(left, right)
+        lines = [first_line, second_line] + [a + u * ' ' + b for a, b in zipped_lines]
+        return lines, n + m + u, max(p, q) + 2, n + u // 2
+
+    def __str__(self):
+        output = [self.name]
+        if self.type:
+            output.append(self.type)
+        if self.value:
+            output.append(self.value)
+        return str(output)
 
 built_in_functions = ['readInt','readString','length','subStr','print']
 def generate_functions():
     for key, value in symbol_table[0].scope.items():
         if key not in built_in_functions and isinstance(value, Function):
             print(f"Function {value.name}")
-            generate(value.body)
-            
+            root = Node('root')
+            generate(root, value.body[0])
+            root.display()
+            # Vyskusaj, ale nahovno to zobrazuje
+            #visualize_tree(root)
 
-def generate(body):
-    for stmt in body:
-        pprint.pprint(stmt)
-
+def generate(root, body):
+    if body == None:
+        return
+    if body[0] == 'statement-scope':
+        # statement-scope
+        root = root.insert_left(Node('Statement-scope')) # insert node and root = root.left
+        generate(root, body[1])
+    if body[0] == 'statement':
+        # statement
+        root = root.insert_left(Node('Statement'))
+        generate(root, body[1])
+        generate(root, body[2])
+    if body[0] == 'variable-definition':
+        # ('variable-definition', ('var-type', 'Rectangle'), 'r', None),
+        root.right = Node('Variable-definition', type = body[1][1], value = body[2])
+    if body[0] == 'statement-id':
+        root.right = Node('=', Node('Help', Node('Identifier', value = body[1]), Node('Property',  value = body[2])), Node('Todo expression')) # TODO Right side expression
+    if body[0] == 'variable-assignment':
+        root.right = Node('=', Node('Variable',value=body[1]), Node('Todo expression'))
+    return 
 #'expression-cast', 'expression-list', 'next-expression'
 
 def classify_expression(expression):
