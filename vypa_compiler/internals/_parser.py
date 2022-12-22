@@ -164,8 +164,12 @@ def p_while_statement(p):
     p[0] = ("statement-while", p[3], p[5])
 
 def p_statement_return(p):
-    '''statement_return : RETURN expr SEMI'''
-    p[0] = ("statement-return", p[2])
+    '''statement_return : RETURN expr SEMI
+                        | RETURN SEMI'''
+    if len(p) == 4:
+        p[0] = ("statement-return", p[2])
+    else:
+        p[0] = ("statement-return", None)
 
 def p_statement_this(p):
     '''statement_this : THIS PERIOD ID EQUALS expr SEMI

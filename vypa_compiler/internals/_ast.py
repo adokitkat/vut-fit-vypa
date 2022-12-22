@@ -265,8 +265,9 @@ def generate(root, body):
     if body[0] == 'statement-return':
         # ("statement-return", expr)
         root.name = 'return'
-        root.left = Node()
-        generate(root.left, body[1])
+        if body[1] != None:
+            root.left = Node()
+            generate(root.left, body[1])
 
     if body[0] == 'statement-this-assignment':
         # ("statement-this-assignment", this/super, id, expr)

@@ -10,13 +10,28 @@ from vypa_compiler.internals._instructions import Instruction
 
 i = Instruction
 
-SP = '$SP'
-FP = '$FP'
+binaryOpMap = {
+    '*': 'MUL',
+    '/': 'DIV',
+    '+': 'ADD',
+    '-': 'SUB',
+    '<': 'LT',
+    '>': 'GT',
+    '==': 'EQ',
+    '&&': 'AND',
+    '||': 'OR'
+}
+
 PC = '$PC'
-expressionResultReg1 = '$4'
-expressionResultReg2 = '$5'
-chunkP = '$6'
-miscR = '$7'
+SP = '$SP'
+FP = '$FP' # $0
+PCrestoreR = '$1'
+resultR = '$2'
+exprR1 = '$3'
+exprR2 = '$4'
+chunkP = '$5'
+miscR1 = '$6'
+miscR2 = '$7'
 
 while_counter = 0 
 if_counter = 0
@@ -43,7 +58,6 @@ class CodeTemplate:
         while_label = f'WHILE{while_counter}'
         nested_constructions.append(while_label)
         return i._label(while_label)
-        
 
     @staticmethod
     def _end_while(cond) -> str:
@@ -68,13 +82,27 @@ class CodeTemplate:
 
     @staticmethod
     def _func_call(func_name, args) -> str:
-        ret = [
+        ret = [f"# Save parameters to stack: {args}"]
+        # for arg in args: # TODO: <---
+        #    ret += [
+        #        i._set(f"[{SP}]", f"[{FP} + {__class__._var_offset(arg.value)}]"),
+        #        __class__._inc_reg(SP)
+        #    ]
+        ret += [
             f"# Call function: {func_name}",
-            i._set(f"[{SP}]", PC), # Save PC to stack
+            i._set(f"[{SP}]", FP), # Save PC to stack
             __class__._inc_reg(SP),
             i._call(f"[{SP}]", func_name) # Call function
         ]
-        return ret + '\n'
+
+        return_type = lookup_in_global_symtable(func_name).return_type
+        if return_type != 'void':
+            ret += [
+                i._set(f"[{SP}]", resultR), # Save return value to stack
+                __class__._inc_reg(SP),
+            ]
+
+        return '\n'.join(ret) + '\n'
 
     @staticmethod
     def _method_call(func_name, args) -> str:
@@ -83,11 +111,11 @@ class CodeTemplate:
     @staticmethod
     def _var_offset(name) -> str: # TODO:
         if name == 'this':
-            pass
+            return '0'
         if exists_in_symtable(name):
             return f"{list(symbol_table[-1].scope.keys()).index(name)}"
         else:
-            pass
+             return '0'
 
     @staticmethod
     def _declare_variable(var_type, name) -> str: 
@@ -118,6 +146,66 @@ class CodeTemplate:
         return '\n'.join(ret) + '\n'
 
     @staticmethod
+    def _load_variable(name, stack_offset) -> str:
+        ret = [
+            f"# Load to variable: {name}, offset: {stack_offset}",
+            i._set(
+                f"[{FP} + {__class__._var_offset(name)}]",
+                *[f"[{SP} + {stack_offset}]" if stack_offset > 0 else f"[{SP} - {abs(stack_offset)}]"]
+            )
+        ]
+        return '\n'.join(ret) + '\n'
+
+    @staticmethod
+    def _return(current_function: str) -> str:
+        
+        if current_function == 'main':
+            return 'JUMP __END\n'
+            
+        len_params = len(lookup_in_global_symtable(current_function).arguments)
+        ret = [
+            f"# Expression result to result register",
+            i._set(f"{resultR}", f"{exprR1}"),
+            f"# Return from: {current_function}",
+            i._set(f"{PCrestoreR}", f"[{FP} - 1]"), # Restore program counter value
+            i._set(f"{SP}", f"{FP}"), # Restore SP
+            i._set(f"{FP}", f"[{FP} - 2]"), # Restore FP
+            __class__._dec_reg(SP, 2 + len_params), # Pop parameters from stack
+            i._return(f"{PCrestoreR}") # Return to right PC value
+        ]
+        return '\n'.join(ret) + '\n'
+
+    @staticmethod
+    def _binary_operation(op, exprType):
+        if exprType == 'string':
+            postfix = 'S'
+        else:
+            postfix = 'I'
+        if op in binaryOpMap.keys():
+
+            if op in ['||', '&&']:
+                logical = f'{binaryOpMap[op]} {exprR1}, [{SP} - 2], [{SP} - 1]'
+            else:
+                logical = f'{binaryOpMap[op]}{postfix} {exprR1}, [{SP} - 2], [{SP} - 1]'
+            ret = ['# Binary operation',
+                    logical,
+                    f'SET [{SP} - 2], {exprR1}',
+                    __class__._dec_reg(SP) # <----
+                ]
+            return '\n'.join(ret) + '\n'
+        else: #
+            pass
+
+    @staticmethod
+    def _push_identifier(value) -> str:
+        ret = [
+            f"# Push identifier {value} to stack",
+            i._set(f"[{SP}]", f"[{FP} + {__class__._var_offset(value)}]"),
+            __class__._inc_reg(SP)
+        ]
+        return '\n'.join(ret) + '\n'
+
+    @staticmethod
     def _literal_int(value) -> str: 
         ret = [
             f"# Create int literal: {value}",
@@ -140,22 +228,21 @@ class CodeTemplate:
 
     @staticmethod
     def _print(parameters) -> str: 
-        l = len (parameters) - 1
-        print(">>> params in print:", parameters)
+        l = len(parameters)
         ret = [f"# Print: {parameters}"]
         for index, param in enumerate(parameters):
             if param.name == 'Int-Literal':
-                ret += [i._writei(f"[{SP} - {-index + l}]")]
+                ret += [i._writei(f"[{SP} {- l + index}]")]
             elif param.name == "String-Literal":
-                ret += [i._writes(f"[{SP} - {-index + l}]")]
+                ret += [i._writes(f"[{SP} {- l + index}]")]
             elif param.name == 'Identifier':
                 var_type = lookup_variable_in_symtable(param.value).var_type
                 if var_type == 'string':
-                    ret += [i._writes(f"[{FP} + {__class__._var_offset(param.value)}]")]
+                    ret += [i._writes(f"[{SP} {- l + index}]")]
                 else:
-                    ret += [i._writei(f"[{FP} + {__class__._var_offset(param.value)}]")]
+                    ret += [i._writei(f"[{SP} {- l + index}]")]
+        ret += [i._subi(SP, SP, len(parameters))]
         return '\n'.join(ret) + '\n'
-
 
     # TODO: treba??
     @staticmethod
@@ -163,10 +250,10 @@ class CodeTemplate:
         ret = [
             #f"# Function: Read int from stdin and put to stack",
             #i._label("ReadIntToStack"),
-            i._readi(miscR),
-            i._set(f"[{SP}]", miscR),
+            i._readi(miscR1),
+            i._set(f"[{SP}]", miscR1),
             __class__._inc_reg(SP),
-            #i._set(f"[{SP} - 1]", miscR),
+            #i._set(f"[{SP} - 1]", miscR1),
             #i._return(f"[{SP}]")
         ]
         return '\n'.join(ret) + '\n'
@@ -176,10 +263,10 @@ class CodeTemplate:
         ret = [
             f"# Function: Read string from stdin and put to stack",
             #i._label("ReadStringToStack"),
-            i._reads(miscR),
-            i._set(f"[{SP}]", miscR),
+            i._reads(miscR1),
+            i._set(f"[{SP}]", miscR1),
             __class__._inc_reg(SP),
-            #i._set(f"[{SP} - 1]", miscR),
+            #i._set(f"[{SP} - 1]", miscR1),
             #i._return(f"[{SP}]")
         ]
         return '\n'.join(ret) + '\n'

@@ -12,6 +12,7 @@ symbol_table = []
 
 def sematic_type_check(expected_type, type):
     if expected_type != type: 
+        eprint(f"Incomparible var type, expected {expected_type}, got {type}")
         exit(ExitCode.ERR_SEM_TYPE_INCOMP) # Incompatible type
 
 def lookup_in_global_symtable(name):
@@ -19,6 +20,7 @@ def lookup_in_global_symtable(name):
     if lookup is not None:
         return lookup
     else:
+        eprint(f"Missing definition")
         exit(ExitCode.ERR_SEM_REST) # Missing definition
 
 def lookup_variable_in_symtable(name):
@@ -28,6 +30,8 @@ def lookup_variable_in_symtable(name):
         lookup = scope.lookup(name)
         if lookup is not None:
             return lookup
+    
+    eprint(f"Missing definition")
     exit(ExitCode.ERR_SEM_REST) # Missing definition
 
 def exists_in_symtable(name):

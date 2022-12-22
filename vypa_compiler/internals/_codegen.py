@@ -15,15 +15,16 @@ from vypa_compiler.internals._code_templates import CodeTemplate
 i = Instruction
 t = CodeTemplate
 
-SP = '$SP'
-FP = '$FP'
 PC = '$PC'
-expressionResultReg1 = '$4'
-expressionResultReg2 = '$5'
-chunkP = '$6'
-miscRegister = '$7'
-
-
+SP = '$SP'
+FP = '$FP' # $0
+PCrestoreR = '$1'
+resultR = '$2'
+exprR1 = '$3'
+exprR2 = '$4'
+chunkP = '$5'
+miscR1 = '$6'
+miscR2 = '$7'
 
 class CodeGenerator:
     
@@ -32,6 +33,7 @@ class CodeGenerator:
         self.header = []
         self.constants = []
         self.code = []
+        self.current_function = None
         self.add_header() # Print header first
         self.add_line('ALIAS FP $0') 
         # SECTION WITH CONSTANTS
@@ -74,16 +76,11 @@ class CodeGenerator:
 
     def generate(self):
         for root in self.roots:
+            self.push_scope()
             self.generate_code(root)
-        self.add_line(['\n', i._label('__END')])
+            self.pop_scope()
 
-    def traverse(self, ast: Node):
-        if ast is not None:
-            if ast.left is not None:
-                self.traverse(ast.left)
-            self.generate_code(ast)
-            if ast.right is not None:
-                self.traverse(ast.right)
+        self.add_line(['\n', i._label('__END')])
 
     def generate_code(self, ast: Node):
 
@@ -94,20 +91,28 @@ class CodeGenerator:
 
         if ast.name == 'root':
             if ast.type == 'Function':
+                self.current_function = ast.value
+                # Function header
                 self.add_line([
                     f"# Function: {ast.value}",
                     i._label(ast.value),
                     t._inc_reg(SP),
                     i._set(FP, SP)
                 ])
+                
+                # Load parameters
+                parameters = lookup_in_global_symtable(self.current_function).arguments
+                for param in parameters:
+                    self.add_line([
+                        t._declare_variable(param.var_type, param.name),
+                        t._load_variable(param.name, -(len(parameters) + 3))
+                    ])
 
                 self.generate_code(ast.left) # ?? Always None
                 self.generate_code(ast.right)
                 
         elif ast.name == 'Statement-scope':
-            self.push_scope()
             self.generate_code(ast.right)
-            self.pop_scope()
         
         elif ast.name == 'Statement':
             self.generate_code(ast.left)
@@ -126,6 +131,9 @@ class CodeGenerator:
             )
 
         elif ast.name == 'Identifier':
+            self.add_line(
+                t._push_identifier(ast.value)
+            )
             return ast
         
         elif ast.name == 'Int-Literal':
@@ -147,46 +155,70 @@ class CodeGenerator:
                     t._print(params)
                 )
             
-            if ast.value == 'readInt':
+            elif ast.value == 'readInt':
                 self.add_line(
                     t._read_int_stack()
                 )
             
-            if ast.value == 'readString':
+            elif ast.value == 'readString':
                 self.add_line(
                     t._read_string_stack()
+                )
+
+            else:
+                params = self.generate_code(ast.right)
+                self.add_line(
+                    t._func_call(ast.value, params)
                 )
 
         elif ast.name == 'Expression-list':
             parameters = []
             returned_ast = self.generate_code(ast.left)
-            print(">>> list: ", returned_ast)
             if returned_ast is not None:
                 parameters.append(returned_ast)
             returned_ast_parameters = self.generate_code(ast.right)
             if returned_ast_parameters is not None:
                 parameters += returned_ast_parameters
-
-            print(">>> params: ", parameters)
             return parameters
-
-            # while ast.right and ast.right.name == 'Next-expression':
-            #     returned_ast = self.generate_code(ast.left)
-            #     if returned_ast is not None:
-            #         parameters.append(returned_ast)
-            #     ast = ast.right
 
         elif ast.name == 'Next-expression':
             parameters = []
             returned_ast = self.generate_code(ast.left)
-            print(">>> next: ", returned_ast)
             if returned_ast is not None:
                 parameters.append(returned_ast)
             returned_ast_parameters = self.generate_code(ast.right)
             if returned_ast_parameters is not None:
                 parameters += returned_ast_parameters
             return parameters
+        
+        elif ast.name == 'return':
+            if ast.left:
+                self.generate_code(ast.left)
+            
+            self.add_line(
+                t._return(self.current_function)
+            )
 
+        elif ast.type == 'Binary':
+            operation = ast.name
+
+            # Check for type
+            temp = ast
+            while temp.left:
+                temp = temp.left
+            if temp.name == 'identifier':
+                expr_type = lookup_variable_in_symtable(temp.value).var_type
+            elif temp.name == 'String-Literal':
+                expr_type = 'string'
+            else:
+                expr_type = 'int'
+
+            # Postorder
+            self.generate_code(ast.left) # Left 
+            self.generate_code(ast.right) # Right
+            self.add_line(
+                t._binary_operation(operation, expr_type)
+            ) # Root
         
             
                                                                                                                                                                                                 
