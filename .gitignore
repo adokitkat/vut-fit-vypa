@@ -1,6 +1,9 @@
 .pytest*
 __pycache__
-build
-dist
-VYPa_*
-vypa_compiler/generated
+/build
+/dist
+/vypa_compiler/generated
+/VYPa_Compiler_Project_2022.egg-info
+**.log
+**.vypc
+**.vc
