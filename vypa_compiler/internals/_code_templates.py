@@ -99,9 +99,13 @@ class CodeTemplate:
                 i._set_word(chunkP, 0, '""'),
                 i._get_word(chunkP, chunkP, 0),
                 i._set(f"[{FP} + {__class__._var_offset(name)}]", chunkP),
+                __class__._inc_reg(SP)
             ]
         else: # int variable
-            ret += [i._set(f"[{FP} + {__class__._var_offset(name)}]", 0)]
+            ret += [
+                i._set(f"[{FP} + {__class__._var_offset(name)}]", 0),
+                __class__._inc_reg(SP)
+            ]
         return '\n'.join(ret) + '\n'
 
     @staticmethod
@@ -136,7 +140,7 @@ class CodeTemplate:
 
     @staticmethod
     def _print(parameters) -> str: 
-        l = len (parameters)
+        l = len (parameters) - 1
         print(">>> params in print:", parameters)
         ret = [f"# Print: {parameters}"]
         for index, param in enumerate(parameters):

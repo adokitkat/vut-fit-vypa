@@ -42,16 +42,16 @@ Default output file name is `out.vc`.
 
 - [x] Lexical analysis
   - Source code lexemes to tokens
-- [ ] Syntax analysis
+- [x] Syntax analysis
 - [ ] Semantic analysis
-  - Construct AST
-- [ ] Target code generation
+- [x] Construct AST
+- [x] Target code generation (partially)
 
 ### Features / Other
 
-- [ ] Symbol table, variables
-- [ ] Operator precedence
-- [ ] Functions
+- [x] Symbol table, variables
+- [x] Operator precedence
+- [x] Functions
 - [ ] OOP
   - [ ] Classes, objects
   - [ ] Inheritance

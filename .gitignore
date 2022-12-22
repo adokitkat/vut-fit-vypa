@@ -1,9 +1,11 @@
+.vscode
 .pytest*
 __pycache__
 /build
 /dist
-/vypa_compiler/generated
 /VYPa_Compiler_Project_2022.egg-info
 **.log
 **.vypc
 **.vc
+/vypa_compiler/generated/parse_table.py
+/vypa_compiler/generated/parser.out
