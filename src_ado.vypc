@@ -1,0 +1,13 @@
+void main(void) {
+  int a, b;
+  a = 2;
+
+  string c;
+  
+  b = 3;
+  c = "hello";
+  print(1,2,c);
+  
+  c = readInt();
+  print(a,b,c);
+}

@@ -168,8 +168,9 @@ def p_statement_return(p):
     p[0] = ("statement-return", p[2])
 
 def p_statement_this(p):
-    '''statement_this : THIS PERIOD ID EQUALS expr SEMI'''
-    p[0] = ("statement-this-assignment", p[3], p[5])
+    '''statement_this : THIS PERIOD ID EQUALS expr SEMI
+                      | SUPER PERIOD ID EQUALS expr SEMI'''
+    p[0] = ("statement-this-assignment", p[1], p[3], p[5])
 
 """
 class A {
@@ -194,7 +195,7 @@ def p_statement_expr(p):
 
 def p_var_assignment(p):
     'var_assignment : ID EQUALS expr SEMI'
-    p[0] = ("variable-assigment", p[1], p[3])
+    p[0] = ("variable-assignment", p[1], p[3])
 
 # DEFVAR
 def p_var_def(p):
@@ -225,7 +226,6 @@ def p_expr_value_string(p):
     '''expr : STRING_CONST'''
     p[0] = ("expression-value", 'string', p[1])
     
-
 def p_expr_arithmetic_operation_unary(p):
     '''expr : MINUS expr'''
     p[0] = ("expression-arithmetic-unary", p[1], p[2])#p[2], p[1]), p[3]) # ???
@@ -285,10 +285,10 @@ def p_expr_list(p):
     p[0] = ("expression-list", p[1], p[2])
 
 def p_next_expr(p):
-    '''next_expr : COMMA expr_list
+    '''next_expr : COMMA expr next_expr
                  | empty'''
-    if len(p) == 3:
-        p[0] = ("next-expression", p[2])
+    if len(p) == 4:
+        p[0] = ("next-expression", p[2], p[3])
     else:
         p[0] = None
 

@@ -1,32 +1,63 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# Project name: Compiler Implementation for VYPlanguage Programming Language
+# Authors: Adam Múdry (xmudry01), Daniel Paul (xpauld00)
+
 import os
 
 from vypa_compiler.internals._utils import eprint, ExitCode, sublist_lookup
 
 symbol_table = []
 
+def sematic_type_check(expected_type, type):
+    if expected_type != type: 
+        exit(ExitCode.ERR_SEM_TYPE_INCOMP) # Incompatible type
+
+def lookup_in_global_symtable(name):
+    lookup = symbol_table[0].lookup(name)
+    if lookup is not None:
+        return lookup
+    else:
+        exit(ExitCode.ERR_SEM_REST) # Missing definition
+
+def lookup_variable_in_symtable(name):
+    for scope in reversed(symbol_table):
+        if scope is symbol_table[0]: # We don't want to search in global scope for variables
+            continue
+        lookup = scope.lookup(name)
+        if lookup is not None:
+            return lookup
+    exit(ExitCode.ERR_SEM_REST) # Missing definition
+
+def exists_in_symtable(name):
+    for scope in reversed(symbol_table):
+        if scope.exists(name):
+            return True
+    return False
+
 class Scope:
 
     def __init__(self):
         self.scope = {}
 
-    def add(self, name, value=None):
+    def add(self, name, value=None) -> bool:
         if self.exists(name):
             exit(ExitCode.ERR_SEM_REST) # Redefinition
         self.scope[name] = value
+        return True
 
-    def set_value(self,name, value):
+    def set_value(self,name, value) -> bool:
         if self.exists(name):
-            self.scope[name] = value
+            self.scope[name].value = value
+            return True
         else:
-            exit(ExitCode.ERR_SEM_REST) # Missing definition
+            return False
 
     def lookup(self, name):
-        if self.scope.get(name) is None:
-            exit(ExitCode.ERR_SEM_REST) # Missing definition
-
         return self.scope.get(name)
 
-    def exists(self, name):
+    def exists(self, name) -> bool:
         return name in self.scope 
     
     def __repr__(self):
@@ -37,6 +68,7 @@ class Variable:
     def __init__(self, var_type: str, name: str):
         self.var_type = var_type
         self.name = name
+        self.value = None
 
     def __repr__(self):
         return f"Variable: ({self.name=}, {self.var_type=})"
@@ -69,8 +101,17 @@ class Class():
     def __init__(self, name, superclass, class_members):
         self.name = name
         self.superclass = superclass
-        self.members = []
         self.symtable = Scope()
+        
+        this = Variable(name, 'this')
+        
+        if superclass is not None:
+            _super = Variable(superclass, 'super')
+        else:
+            _super = Variable(None, 'super')
+        self.members = [this, _super]
+        self.symtable.add(this.name, this)
+        self.symtable.add(_super.name, _super)
         self.process_class_members(class_members)
     
     # Process functions and variables in the class
@@ -100,6 +141,7 @@ class Class():
     def __repr__(self):
         return f"""Class {self.name}:
 {os.linesep.join([f"{' '*8}{repr(x)}" for x in self.members])}"""
+
 class Program:
 
     def __init__(self, parsed_list):
@@ -131,9 +173,8 @@ class Program:
 {os.linesep.join([f"{' '*4}{repr(x)}" for x in self.functions])}"""
 
 def add_built_in_functions_to_symtable():
-    symbol_table.append(Scope()) # global scope
     symbol_table[0].add('readInt', Function(name='readInt', arguments=[], return_type='int', body=None))
     symbol_table[0].add('readString', Function(name='readString', arguments=[], return_type='string', body=None))
     symbol_table[0].add('length', Function(name='length', arguments=[Variable(var_type='string', name='s')], return_type='int', body=None))
-    symbol_table[0].add('subStr', Function(name='subStr', arguments=[Variable(var_type='string',name='s'),Variable(var_type='int',name='i'),Variable(var_type='int',name='n')], return_type='string', body=None))
+    symbol_table[0].add('subStr', Function(name='subStr', arguments=[Variable(var_type='string', name='s'), Variable(var_type='int', name='i'), Variable(var_type='int',name='n')], return_type='string', body=None))
     #Function(name='print',arguments=["?"], return_type='void', body=None)

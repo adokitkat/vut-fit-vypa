@@ -14,12 +14,12 @@ import os, sys
 import ply.lex as lex
 import pprint
 
-#from vypa_compiler.internals._models import *
-from vypa_compiler.internals._utils import eprint, ExitCode, sublist_lookup # ,convert_to_lists
+from vypa_compiler.internals._utils import eprint, ExitCode
 from vypa_compiler.internals._lexer import make_lexer
 from vypa_compiler.internals._parser import make_parser
-from vypa_compiler.internals._models import symbol_table, add_built_in_functions_to_symtable, Program
-from vypa_compiler.internals._codegen import generate_functions
+from vypa_compiler.internals._models import symbol_table, add_built_in_functions_to_symtable, Program, Scope
+from vypa_compiler.internals._ast import generate_functions
+from vypa_compiler.internals._codegen import CodeGenerator
 
 __author__ = "Adam Múdry and Daniel Paul"
 __copyright__ = "Copyright 2022, VYPa Compiler Project 2022"
@@ -69,15 +69,19 @@ def main():
     print("Simulation of derivation tree:")
     pprint.pprint(parsed)
 
+    symbol_table.append(Scope()) # global scope
     add_built_in_functions_to_symtable()
     #parsed_list = convert_to_lists(parsed)
     #pprint.pprint(parsed_list, indent=4)
     program = Program(parsed)
-    #print(program)
+    print(program)
     print(symbol_table)
     #print([x.symtable for x in program.classes])
     #print(list(symbol_table[0].scope.values())[0].symtable)
-    generate_functions()
+    asts = generate_functions(symbol_table)
+    generator = CodeGenerator(asts)
+    generator.generate()
+    generator.print_code(OUTPUT_FILE)
 
 if __name__ == "__main__":
     main()
