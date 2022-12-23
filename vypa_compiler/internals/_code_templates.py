@@ -292,27 +292,28 @@ class CodeTemplate:
         l = len(parameters)
         ret = [f"# Print: {parameters}"]
         for index, param in enumerate(parameters):
-            if param.name == 'Int-Literal':
-                ret += [i._writei(f"[{SP} {- l + index}]")]
+            neg_offset = abs(- l + index)
+            if param.name == 'Int-Literal' or param.type == 'Binary':
+                ret += [i._writei(f"[{SP} - {neg_offset}]")]
             
             elif param.name == "String-Literal":
-                ret += [i._writes(f"[{SP} {- l + index}]")]
+                ret += [i._writes(f"[{SP} - {neg_offset}]")]
             
             elif param.name == 'Identifier':
                 lookup = lookup_variable_in_symtable(param.value)
                 out_type = lookup.var_type
                 if out_type == 'string':
-                    ret += [i._writes(f"[{SP} {- l + index}]")]
+                    ret += [i._writes(f"[{SP} - {neg_offset}]")]
                 else:
-                    ret += [i._writei(f"[{SP} {- l + index}]")]
+                    ret += [i._writei(f"[{SP} - {neg_offset}]")]
             
             elif param.name == 'Function-call':
                 lookup = lookup_in_global_symtable(param.value)
                 out_type = lookup.return_type
                 if out_type == 'string':
-                    ret += [i._writes(f"[{SP} {- l + index}]")]
+                    ret += [i._writes(f"[{SP} - {neg_offset}]")]
                 else:
-                    ret += [i._writei(f"[{SP} {- l + index}]")]
+                    ret += [i._writei(f"[{SP} - {neg_offset}]")]
 
         ret += [i._subi(SP, SP, len(parameters))]
         return '\n'.join(ret) + '\n'
