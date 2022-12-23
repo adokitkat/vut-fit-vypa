@@ -51,9 +51,14 @@ Default output file name is `out.vc`.
 
 - [x] Symbol table, variables
 - [x] Operator precedence
+- [x] If-Else
+- [ ] While
 - [x] Functions
+- [ ] Built-in Functions
+  - [x] Print
+  - [ ] Cast INT STRING 
 - [ ] OOP
   - [ ] Classes, objects
   - [ ] Inheritance
-
+   
 Etc.

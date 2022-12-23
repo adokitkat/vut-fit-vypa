@@ -90,18 +90,20 @@ class Node:
             ret.append(str(self.value))
         return ' | '.join(ret)
 
+
+
 built_in_functions = ['readInt', 'readString', 'length', 'subStr', 'print']
 def generate_functions(sym_tab) -> list[Node]:
     asts = []
     for key, value in sym_tab[0].scope.items():
         if key not in built_in_functions and isinstance(value, Function):
-            root = Node('root', type='Function', value=value.name, right = Node())
+            root = Node('root', type='Function', value=value.name, right=Node())
             generate(root.right, value.body[0])
             root.display()
             asts.append(root)
     return asts
-    
-            
+
+
 
 def generate(root, body):
     
@@ -122,6 +124,11 @@ def generate(root, body):
         if (body[2] != None):
             root.right = Node()
             generate(root.right, body[2])
+        # else:
+        #     if root.left.name != 'return':
+        #         root.right = Node()
+        #         generate(root.right, ('statement-return', None))
+
 
     if body[0] == 'variable-definition':
         # ('variable-definition', ('var-type', 'Rectangle'), 'r',  (next-var, r2,  (next-var, r3, None))

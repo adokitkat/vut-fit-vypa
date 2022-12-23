@@ -43,7 +43,7 @@ tokens = reserved + (
 
     # Delimeters
     'LPAREN', 'RPAREN',
-    'LBRACKET', 'RBRACKET',
+    # 'LBRACKET', 'RBRACKET', # Isn't needed
     'LBRACE', 'RBRACE',
     'COMMA', 'PERIOD', 'SEMI', 'COLON',
 )
@@ -78,8 +78,8 @@ t_EQUALS = r'='
 
 t_LPAREN   = r'\('
 t_RPAREN   = r'\)'
-t_LBRACKET = r'\['
-t_RBRACKET = r'\]'
+#t_LBRACKET = r'\['
+#t_RBRACKET = r'\]'
 t_LBRACE   = r'\{'
 t_RBRACE   = r'\}'
 t_COMMA    = r','
