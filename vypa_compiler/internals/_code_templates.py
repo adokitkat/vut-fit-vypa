@@ -49,10 +49,6 @@ class CodeTemplate:
         return i._subi(reg, reg, value)
 
     @staticmethod
-    def _if_else(cond, if_code, else_code) -> str:
-        pass
-
-    @staticmethod
     def _start_while() -> str:
         while_counter += 1 
         while_label = f'WHILE{while_counter}'
@@ -79,6 +75,44 @@ class CodeTemplate:
         return '\n'.join(ret) + '\n'
 
     #_while(cond, process_while_body())
+    @staticmethod
+    def _if_start() -> str:
+        global if_counter
+        if_counter += 1
+        if_label = f'IF{if_counter}'
+        nested_constructions.append(if_counter)
+        ret = [
+            f'# Start of if',
+            __class__._dec_reg(SP),
+            i._jumpnz(f'{if_label}', f'[{SP}]'),
+            i._jump(f'{if_label}__end'),
+            i._label(if_label)          
+            ]
+        return '\n'.join(ret) + '\n'
+    
+    @staticmethod
+    def _if_end() -> str:
+        counter = nested_constructions[-1]
+        if_label = f'IF{counter}'
+        else_label = f'ELSE{counter}'
+        ret = [
+            f'# End of if',
+            i._jump(f'{else_label}__end'),
+            i._label(f'{if_label}__end')
+        ]
+    
+        return '\n'.join(ret) + '\n'
+    
+    @staticmethod
+    def _else_end() -> str:
+        counter = nested_constructions.pop()
+        else_label = f'ELSE{counter}'
+        ret = [
+            f'# End of else',
+            i._label(f'{else_label}__end')
+        ]
+        return '\n'.join(ret) + '\n'
+        
 
     @staticmethod
     def _func_call(func_name, args) -> str:
@@ -112,10 +146,12 @@ class CodeTemplate:
     def _var_offset(name) -> str: # TODO:
         if name == 'this':
             return '0'
-        if exists_in_symtable(name):
-            return f"{list(symbol_table[-1].scope.keys()).index(name)}"
+        
+        scope, boolean, length = exists_in_symtable(name)
+        if boolean:
+            return f"{list(scope.scope.keys()).index(name) + length}"
         else:
-             return '0'
+            return '0'
 
     @staticmethod
     def _declare_variable(var_type, name) -> str: 
@@ -160,7 +196,7 @@ class CodeTemplate:
     def _return(current_function: str) -> str:
         
         if current_function == 'main':
-            return 'JUMP __END\n'
+            return i._jump('__END')
             
         len_params = len(lookup_in_global_symtable(current_function).arguments)
         ret = [
@@ -176,7 +212,7 @@ class CodeTemplate:
         return '\n'.join(ret) + '\n'
 
     @staticmethod
-    def _binary_operation(op, exprType):
+    def _binary_operation(op, exprType) -> str:
         if exprType == 'string':
             postfix = 'S'
         else:
@@ -187,14 +223,39 @@ class CodeTemplate:
                 logical = f'{binaryOpMap[op]} {exprR1}, [{SP} - 2], [{SP} - 1]'
             else:
                 logical = f'{binaryOpMap[op]}{postfix} {exprR1}, [{SP} - 2], [{SP} - 1]'
-            ret = ['# Binary operation',
+            ret = [f'# Binary operation {op}',
                     logical,
                     f'SET [{SP} - 2], {exprR1}',
                     __class__._dec_reg(SP) # <----
                 ]
-            return '\n'.join(ret) + '\n'
-        else: #
-            pass
+        #elif op == "<":
+        #    ret = [f'# Binary operation <',
+        #            f'LT{postfix} {exprR1}, [{}'
+        #        ]
+        elif op == "<=":
+            ret = ['# Binary operation <=',
+                    f'LT{postfix} {exprR1}, [{SP} - 2], [{SP} - 1]',
+                    f'EQ{postfix} {exprR2}, [{SP} - 2], [{SP} - 1]',
+                    f'OR {exprR1}, [{SP} - 2], {exprR1}',
+                    __class__._dec_reg(SP)
+                    ]
+        elif op == ">=":
+            ret = ['# Binary operation >=',
+                    f'GT{postfix} {exprR1}, [{SP} - 2], [{SP} - 1]',
+                    f'EQ{postfix} {exprR2}, [{SP} - 2], [{SP} - 1]',
+                    f'OR {exprR1}, {exprR1}, {exprR2}',
+                    f'SET [{SP} - 2], {exprR1}',
+                    __class__._dec_reg(SP)
+                    ]
+        elif op == '!=':
+            ret = ['# Binary operation!=',
+                    f'EQ{postfix} {exprR1}, [{SP} - 2], [{SP} - 1]',
+                    f'NOT {exprR1}, {exprR1}',
+                    f'SET [{SP} - 2], {exprR1}',
+                    __class__._dec_reg(SP)
+                    ]
+        return '\n'.join(ret) + '\n'
+
 
     @staticmethod
     def _push_identifier(value) -> str:
@@ -233,14 +294,26 @@ class CodeTemplate:
         for index, param in enumerate(parameters):
             if param.name == 'Int-Literal':
                 ret += [i._writei(f"[{SP} {- l + index}]")]
+            
             elif param.name == "String-Literal":
                 ret += [i._writes(f"[{SP} {- l + index}]")]
+            
             elif param.name == 'Identifier':
-                var_type = lookup_variable_in_symtable(param.value).var_type
-                if var_type == 'string':
+                lookup = lookup_variable_in_symtable(param.value)
+                out_type = lookup.var_type
+                if out_type == 'string':
                     ret += [i._writes(f"[{SP} {- l + index}]")]
                 else:
                     ret += [i._writei(f"[{SP} {- l + index}]")]
+            
+            elif param.name == 'Function-call':
+                lookup = lookup_in_global_symtable(param.value)
+                out_type = lookup.return_type
+                if out_type == 'string':
+                    ret += [i._writes(f"[{SP} {- l + index}]")]
+                else:
+                    ret += [i._writei(f"[{SP} {- l + index}]")]
+
         ret += [i._subi(SP, SP, len(parameters))]
         return '\n'.join(ret) + '\n'
 

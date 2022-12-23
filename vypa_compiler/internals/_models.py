@@ -20,7 +20,7 @@ def lookup_in_global_symtable(name):
     if lookup is not None:
         return lookup
     else:
-        eprint(f"Missing definition")
+        eprint(f"Missing definition (global)): {name}")
         exit(ExitCode.ERR_SEM_REST) # Missing definition
 
 def lookup_variable_in_symtable(name):
@@ -31,14 +31,23 @@ def lookup_variable_in_symtable(name):
         if lookup is not None:
             return lookup
     
-    eprint(f"Missing definition")
+    eprint(f"Missing definition: {name}")
     exit(ExitCode.ERR_SEM_REST) # Missing definition
 
 def exists_in_symtable(name):
+    offset = 0
+    found = False
+    found_scope = None
     for scope in reversed(symbol_table):
+        # End of search
+        if scope == symbol_table[0]:
+            return found_scope, found, offset
+        # Found, compute offset
+        if found == True:
+            offset += len(scope.scope.keys())
         if scope.exists(name):
-            return True
-    return False
+            found = True
+            found_scope = scope
 
 class Scope:
 
