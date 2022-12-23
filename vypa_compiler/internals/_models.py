@@ -12,8 +12,68 @@ symbol_table = []
 
 def sematic_type_check(expected_type, type):
     if expected_type != type: 
-        eprint(f"Incomparible var type, expected {expected_type}, got {type}")
+        eprint(f"Incompatible assign value, expected {expected_type}, got {type}")
         exit(ExitCode.ERR_SEM_TYPE_INCOMP) # Incompatible type
+
+def sematic_check_assign(ast):
+	left_type = lookup_variable_in_symtable(ast.left.value).var_type
+	right_type = sematic_check_expr(ast.right)
+	sematic_type_check(left_type, right_type)
+
+def sematic_check_expr(ast):
+	if ast.type == 'Unary':
+		return 'int'
+	elif ast.type == 'Binary':
+		left_type = sematic_check_expr(ast.left)
+		right_type = sematic_check_expr(ast.right)
+		sematic_type_check(left_type,right_type)
+		return left_type
+	elif ast.name == 'Int-Literal':
+		return 'int'
+	elif ast.name == 'String-Literal':
+		return 'string'
+	elif ast.name == 'Identifier':
+		return lookup_variable_in_symtable(ast.value).var_type
+	elif ast.name == 'Function-call':
+		function = lookup_in_global_symtable(ast.value)
+		sematic_func_call_arguments_check(function, ast)
+		return function.return_type
+	elif ast.name == 'Expression-cast':
+		return ast.left.value
+	
+
+def sematic_func_call_arguments_check(function, ast):
+    if ast.right:
+        arguments_in_call = sematic_get_function_arguments_type(ast.right)
+    else:
+        arguments_in_call = []
+    arguments_in_function = []
+    for argument in function.arguments:
+        arguments_in_function.append(argument.var_type)
+    for type1,type2 in zip(arguments_in_call, arguments_in_function):
+        if type1 != type2:
+            eprint(f"Incompatible argument type in function {function.name}, expected {type2}, got {type1}")
+            exit(ExitCode.ERR_SEM_TYPE_INCOMP) # Incompatible type
+	
+
+def sematic_get_function_arguments_type(ast):
+    parameters = []
+    if ast.name == 'Expression-list' or ast.name == 'Next-expression':
+        parameter = sematic_check_expr(ast.left)
+        if parameter is not None:
+            parameters.append(parameter)
+        if ast.right:
+            returned_parameters = sematic_get_function_arguments_type(ast.right)
+            if returned_parameters is not None:
+                parameters += returned_parameters
+    return parameters
+
+def sematic_check_return_type(function,ast):
+    return_type = sematic_check_expr(ast.left)
+    if return_type != function.return_type:
+        eprint(f"Incompatible return value, expected {function.return_type}, got {return_type}")
+        exit(ExitCode.ERR_SEM_TYPE_INCOMP) # Incompatible type
+
 
 def lookup_in_global_symtable(name):
     lookup = symbol_table[0].lookup(name)

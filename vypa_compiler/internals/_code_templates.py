@@ -50,29 +50,57 @@ class CodeTemplate:
 
     @staticmethod
     def _start_while() -> str:
+        global while_counter
         while_counter += 1 
         while_label = f'WHILE{while_counter}'
         nested_constructions.append(while_label)
-        return i._label(while_label)
+        ret = [
+                '# Start while',
+                i._label(while_label),
+            ]
+        return '\n'.join(ret) + '\n'
 
     @staticmethod
-    def _end_while(cond) -> str:
+    def _evaluate_while() -> str:
+        label = nested_constructions[-1]
+        ret = [
+            '# Evaluate while',
+            __class__._dec_reg(SP),
+            i._jumpz(f'{label}__end', f'[{SP}]' )
+        ]
+        return '\n'.join(ret) + '\n'
+
+    @staticmethod
+    def _cast_int_to_str():
+        ret = [
+            '# Cast int to string',
+            i._create(chunkP, 1),
+            i._set_word(chunkP, 0, '""'),
+            i._get_word(chunkP, chunkP, 0),
+            i._int_to_string(chunkP, f'[{SP} - 1]'),
+            i._set(f'[{SP} - 1]', chunkP)
+        ]
+        return '\n'.join(ret) + '\n'
+
+    @staticmethod
+    def _end_while() -> str:
       label = nested_constructions.pop()
       # Condition
       ret = [
+        '# End while',
         i._jump(label),
-        i._label(label + "_end")
+        i._label(f'{label}__end')
       ]
       return '\n'.join(ret) + '\n'
 
-    @staticmethod
-    def _while(cond, body) -> str:
-        ret = [
-            __class__._start_while(),
-            body,
-            __class__._end_while(cond)
-        ]
-        return '\n'.join(ret) + '\n'
+    #@@staticmethod
+    #@def _while(cond, body) -> str:
+    #@    ret = [
+    #@        __class__._start_while(),
+    #@        body,
+    #@        __class__._end_while(cond)
+    #@    ]
+    #@    return '\n'.join(ret) + '\n'
 
     #_while(cond, process_while_body())
     @staticmethod
@@ -147,9 +175,9 @@ class CodeTemplate:
         if name == 'this':
             return '0'
         
-        scope, boolean, length = exists_in_symtable(name)
+        scope, boolean, offset = exists_in_symtable(name)
         if boolean:
-            return f"{list(scope.scope.keys()).index(name) + length}"
+            return f"{list(scope.scope.keys()).index(name) + offset}"
         else:
             return '0'
 
@@ -212,6 +240,15 @@ class CodeTemplate:
         return '\n'.join(ret) + '\n'
 
     @staticmethod
+    def _unary_minus():
+        ret = [
+            f'# Unary minus expression',
+            i._subi(exprR1, 0, f'[{SP} - 1]'),
+            i._set(f'[{SP} - 1]', exprR1)
+        ]
+        return '\n'.join(ret) + '\n'
+
+    @staticmethod
     def _binary_operation(op, exprType) -> str:
         if exprType == 'string':
             postfix = 'S'
@@ -228,10 +265,6 @@ class CodeTemplate:
                     f'SET [{SP} - 2], {exprR1}',
                     __class__._dec_reg(SP) # <----
                 ]
-        #elif op == "<":
-        #    ret = [f'# Binary operation <',
-        #            f'LT{postfix} {exprR1}, [{}'
-        #        ]
         elif op == "<=":
             ret = ['# Binary operation <=',
                     f'LT{postfix} {exprR1}, [{SP} - 2], [{SP} - 1]',

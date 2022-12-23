@@ -7,7 +7,7 @@
 import sys
 
 from vypa_compiler.internals._utils import ExitCode
-from vypa_compiler.internals._models import symbol_table, lookup_in_global_symtable, lookup_variable_in_symtable, Scope, Variable, Function, Class, Program
+from vypa_compiler.internals._models import symbol_table, lookup_in_global_symtable, lookup_variable_in_symtable, Scope, sematic_check_return_type, sematic_func_call_arguments_check, sematic_check_assign
 from vypa_compiler.internals._ast import Node
 from vypa_compiler.internals._instructions import Instruction
 from vypa_compiler.internals._code_templates import CodeTemplate
@@ -133,6 +133,7 @@ class CodeGenerator:
             return ast
         
         elif ast.name == '=':
+            sematic_check_assign(ast)
             self.generate_code(ast.right)
             self.add_line(
                 t._assign_variable(ast.left.value)
@@ -176,6 +177,7 @@ class CodeGenerator:
                 )
 
             else:
+                sematic_func_call_arguments_check(lookup_in_global_symtable(ast.value), ast)
                 params = self.generate_code(ast.right)
                 self.add_line(
                     t._func_call(ast.value, params)
@@ -205,13 +207,18 @@ class CodeGenerator:
         
         elif ast.name == 'return':
             if ast.left:
+                sematic_check_return_type(lookup_in_global_symtable(self.current_function), ast)
                 self.generate_code(ast.left)
             
             self.add_line(
                 t._return(self.current_function)
             )
             return ast
-
+        elif ast.type == 'Unary':
+            self.generate_code(ast.right)
+            self.add_line(
+                t._unary_minus()
+            )
         elif ast.type == 'Binary':
             operation = ast.name
 
@@ -265,4 +272,25 @@ class CodeGenerator:
                 t._else_end()
             )
 
-            return ast                                                                                           
+            return ast      
+        elif ast.name == 'while':
+            self.add_line(
+                t._start_while()
+            )                   
+            self.generate_code(ast.left)
+            self.add_line(
+                t._evaluate_while()
+            )                    
+            self.push_scope()
+            self.generate_code(ast.right)
+            self.pop_scope()
+            self.add_line(
+                t._end_while()
+            )        
+        elif ast.name == 'Expression-cast':
+            if ast.left.value == 'string':
+                self.generate_code(ast.right)
+                self.add_line(
+                    t._cast_int_to_str()
+                )     
+            return ast.right                                 
