@@ -10,8 +10,6 @@ Main source file
 """
 
 import os, sys
-
-import ply.lex as lex
 import pprint
 
 from vypa_compiler.internals._utils import eprint, ExitCode
@@ -32,6 +30,21 @@ SOURCE_FILE = ""
 OUTPUT_FILE = "out.vc"
 
 DEBUG = True
+
+def compile(source_string: str) -> str:
+    """Compiles the source string and returns the result"""
+    symbol_table.clear()
+    
+    lexer = make_lexer()
+    parser = make_parser()
+    parsed = parser.parse(source_string)
+    symbol_table.append(Scope()) # global scope
+    add_built_in_functions_to_symtable()
+    program = Program(parsed)
+    asts = generate_functions(symbol_table)
+    generator = CodeGenerator(asts)
+    generator.generate()
+    return str(generator)
 
 def main():
     args = sys.argv[1:]

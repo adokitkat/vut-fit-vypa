@@ -116,6 +116,7 @@ class Scope:
 
     def add(self, name, value=None) -> bool:
         if self.exists(name):
+            eprint(f"Redefinition of: {name}")
             exit(ExitCode.ERR_SEM_REST) # Redefinition
         self.scope[name] = value
         return True
@@ -246,8 +247,12 @@ class Program:
 {os.linesep.join([f"{' '*4}{repr(x)}" for x in self.functions])}"""
 
 def add_built_in_functions_to_symtable():
-    symbol_table[0].add('readInt', Function(name='readInt', arguments=[], return_type='int', body=None))
-    symbol_table[0].add('readString', Function(name='readString', arguments=[], return_type='string', body=None))
-    symbol_table[0].add('length', Function(name='length', arguments=[Variable(var_type='string', name='s')], return_type='int', body=None))
-    symbol_table[0].add('subStr', Function(name='subStr', arguments=[Variable(var_type='string', name='s'), Variable(var_type='int', name='i'), Variable(var_type='int',name='n')], return_type='string', body=None))
+    if not symbol_table[0].exists('readInt'):
+        symbol_table[0].add('readInt', Function(name='readInt', arguments=[], return_type='int', body=None))
+    if not symbol_table[0].exists('readString'):
+        symbol_table[0].add('readString', Function(name='readString', arguments=[], return_type='string', body=None))
+    if not symbol_table[0].exists('length'):
+        symbol_table[0].add('length', Function(name='length', arguments=[Variable(var_type='string', name='s')], return_type='int', body=None))
+    if not symbol_table[0].exists('subStr'):
+        symbol_table[0].add('subStr', Function(name='subStr', arguments=[Variable(var_type='string', name='s'), Variable(var_type='int', name='i'), Variable(var_type='int',name='n')], return_type='string', body=None))
     #Function(name='print',arguments=["?"], return_type='void', body=None)

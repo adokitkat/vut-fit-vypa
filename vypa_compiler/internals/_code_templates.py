@@ -130,6 +130,35 @@ class CodeTemplate:
         ]
     
         return '\n'.join(ret) + '\n'
+
+    #_while(cond, process_while_body())
+    @staticmethod
+    def _if_start() -> str:
+        global if_counter
+        if_counter += 1
+        if_label = f'IF{if_counter}'
+        nested_constructions.append(if_counter)
+        ret = [
+            f'# Start of if',
+            __class__._dec_reg(SP),
+            i._jumpnz(f'{if_label}', f'[{SP}]'),
+            i._jump(f'{if_label}__end'),
+            i._label(if_label)          
+            ]
+        return '\n'.join(ret) + '\n'
+    
+    @staticmethod
+    def _if_end() -> str:
+        counter = nested_constructions[-1]
+        if_label = f'IF{counter}'
+        else_label = f'ELSE{counter}'
+        ret = [
+            f'# End of if',
+            i._jump(f'{else_label}__end'),
+            i._label(f'{if_label}__end')
+        ]
+    
+        return '\n'.join(ret) + '\n'
     
     @staticmethod
     def _else_end() -> str:
@@ -224,6 +253,7 @@ class CodeTemplate:
     def _return(current_function: str) -> str:
         
         if current_function == 'main':
+            return i._jump('__END')
             return i._jump('__END')
             
         len_params = len(lookup_in_global_symtable(current_function).arguments)
@@ -325,27 +355,28 @@ class CodeTemplate:
         l = len(parameters)
         ret = [f"# Print: {parameters}"]
         for index, param in enumerate(parameters):
-            if param.name == 'Int-Literal':
-                ret += [i._writei(f"[{SP} {- l + index}]")]
+            neg_offset = abs(- l + index)
+            if param.name == 'Int-Literal' or param.type == 'Binary':
+                ret += [i._writei(f"[{SP} - {neg_offset}]")]
             
             elif param.name == "String-Literal":
-                ret += [i._writes(f"[{SP} {- l + index}]")]
+                ret += [i._writes(f"[{SP} - {neg_offset}]")]
             
             elif param.name == 'Identifier':
                 lookup = lookup_variable_in_symtable(param.value)
                 out_type = lookup.var_type
                 if out_type == 'string':
-                    ret += [i._writes(f"[{SP} {- l + index}]")]
+                    ret += [i._writes(f"[{SP} - {neg_offset}]")]
                 else:
-                    ret += [i._writei(f"[{SP} {- l + index}]")]
+                    ret += [i._writei(f"[{SP} - {neg_offset}]")]
             
             elif param.name == 'Function-call':
                 lookup = lookup_in_global_symtable(param.value)
                 out_type = lookup.return_type
                 if out_type == 'string':
-                    ret += [i._writes(f"[{SP} {- l + index}]")]
+                    ret += [i._writes(f"[{SP} - {neg_offset}]")]
                 else:
-                    ret += [i._writei(f"[{SP} {- l + index}]")]
+                    ret += [i._writei(f"[{SP} - {neg_offset}]")]
 
         ret += [i._subi(SP, SP, len(parameters))]
         return '\n'.join(ret) + '\n'
