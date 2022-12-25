@@ -86,7 +86,7 @@ def lookup_in_global_symtable(name):
     if lookup is not None:
         return lookup
     else:
-        eprint(f"Missing definition (global)): {name}")
+        eprint(f"Missing definition (global): {name}")
         exit(ExitCode.ERR_SEM_REST) # Missing definition
 
 # Lookup in local symtables for variables
@@ -165,12 +165,19 @@ class Function:
         self.name = name
         self.arguments = []
         self.return_type = return_type
+        self.generated = False
         # For built-in functions arguments don't have to be processed
         if arguments == [] or isinstance(arguments[0], Variable) :
             self.arguments = arguments
         else:
             self.process_function_arguments(arguments)
         self.body = body
+
+    def mark_generated(self):
+        self.generated = True
+        
+    def is_generated(self) -> bool:
+        return self.generated
 
     def process_function_arguments(self, sublist):
         if (self.class_this is not None):
@@ -268,7 +275,6 @@ def add_built_in_functions_to_symtable():
         symbol_table[0].add('length', Function(name='length', arguments=[Variable(var_type='string', name='s')], return_type='int', body=None))
     if not symbol_table[0].exists('subStr'):
         symbol_table[0].add('subStr', Function(name='subStr', arguments=[Variable(var_type='string', name='s'), Variable(var_type='int', name='i'), Variable(var_type='int',name='n')], return_type='string', body=None))
-    #Function(name='print',arguments=["?"], return_type='void', body=None)
     if not symbol_table[0].exists('concat'):
         symbol_table[0].add('concat', Function(name='concat', arguments=[Variable(var_type='string', name='s1'), Variable(var_type='string', name='s2')], return_type='string', body=None))
     

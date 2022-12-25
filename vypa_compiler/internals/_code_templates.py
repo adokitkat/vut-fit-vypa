@@ -40,6 +40,7 @@ while_counter = 0
 if_counter = 0
 nested_constructions = []
 
+# Class representing a code teplate based on AST nodes
 class CodeTemplate:
 
     # Templates for code generation
@@ -96,16 +97,6 @@ class CodeTemplate:
       ]
       return '\n'.join(ret) + '\n'
 
-    #@@staticmethod
-    #@def _while(cond, body) -> str:
-    #@    ret = [
-    #@        __class__._start_while(),
-    #@        body,
-    #@        __class__._end_while(cond)
-    #@    ]
-    #@    return '\n'.join(ret) + '\n'
-
-    #_while(cond, process_while_body())
     @staticmethod
     def _if_start() -> str:
         global if_counter
@@ -134,7 +125,6 @@ class CodeTemplate:
     
         return '\n'.join(ret) + '\n'
 
-    #_while(cond, process_while_body())
     @staticmethod
     def _if_start() -> str:
         global if_counter
@@ -198,7 +188,7 @@ class CodeTemplate:
         pass
     
     @staticmethod
-    def _var_offset(name) -> str: # TODO:
+    def _var_offset(name) -> str: 
         if name == 'this':
             return '0'
         
@@ -407,13 +397,10 @@ class CodeTemplate:
     @staticmethod
     def _read_int_stack() -> str:
         ret = [
-            #f"# Function: Read int from stdin and put to stack",
-            #i._label("ReadIntToStack"),
+            f"# Function: Read int from stdin and put to stack",
             i._readi(miscR1),
             i._set(f"[{SP}]", miscR1),
             __class__._inc_reg(SP),
-            #i._set(f"[{SP} - 1]", miscR1),
-            #i._return(f"[{SP}]")
         ]
         return '\n'.join(ret) + '\n'
 
@@ -421,12 +408,9 @@ class CodeTemplate:
     def _read_string_stack() -> str:
         ret = [
             f"# Function: Read string from stdin and put to stack",
-            #i._label("ReadStringToStack"),
             i._reads(miscR1),
             i._set(f"[{SP}]", miscR1),
             __class__._inc_reg(SP),
-            #i._set(f"[{SP} - 1]", miscR1),
-            #i._return(f"[{SP}]")
         ]
         return '\n'.join(ret) + '\n'
 
@@ -463,13 +447,12 @@ class CodeTemplate:
             i._label("concat_end"), 
             __class__._dec_reg(SP, 3),
             i._set(resultR, chunkP),
-            #__class__._inc_reg(SP),
             i._return(f'[{SP} + 3]')
         ]
         return '\n'.join(ret) + '\n'
 
     @staticmethod
-    def _substring() -> str: # TODO: $1 -> miscR2 ; $2 -> resultR
+    def _substring() -> str: 
         ret = [
             f"# Substring function",
             i._label('subStr'),
@@ -498,7 +481,7 @@ class CodeTemplate:
             i._lti(miscR2, exprR1, miscR1),
             i._jumpz('substr_end', miscR2),
 
-            i._lti(miscR2, resultR, f'[{SP} - 2]'), # TODO: $1 -> miscR2 ; $2 -> resultR
+            i._lti(miscR2, resultR, f'[{SP} - 2]'),
             i._jumpz('substr_end', miscR2),
 
             i._get_word(miscR2, f'[{SP} - 4]', exprR1),
@@ -510,9 +493,7 @@ class CodeTemplate:
             i._label('substr_end'),
 
             __class__._dec_reg(SP, 4),
-            #i._set(f'[{SP}]', chunkP),
             i._set(resultR, chunkP),
-            #__class__._inc_reg(SP),
             i._return(f'[{SP} + 4]')
         ]
         return '\n'.join(ret) + '\n'

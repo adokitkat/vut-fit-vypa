@@ -42,8 +42,7 @@ class CodeGenerator:
         self.current_function = None
 
         self.add_header() # Print header first
-        self.add_line('ALIAS FP $0') 
-        # SECTION WITH CONSTANTS
+        self.add_line('ALIAS FP $0')
         self.add_line((i._jump('main'), "")) # Jump to main
         
     def __str__(self) -> str:
@@ -188,9 +187,16 @@ class CodeGenerator:
 
             else:
                 if ast.value == 'length':
-                    self.add_line(t._length(), self.footer)
+                    func = lookup_in_global_symtable(ast.value)
+                    if not func.is_generated():
+                        func.mark_generated()
+                        self.add_line(t._length(), self.footer)
+                
                 elif ast.value == 'subStr':
-                    self.add_line(t._substring(), self.footer)
+                    func = lookup_in_global_symtable(ast.value)
+                    if not func.is_generated():
+                        func.mark_generated()
+                        self.add_line(t._substring(), self.footer)
 
                 sematic_func_call_arguments_check(lookup_in_global_symtable(ast.value), ast)
                 params = self.generate_code(ast.right)
@@ -254,7 +260,10 @@ class CodeGenerator:
             self.generate_code(ast.right) # Right
 
             if operation == '+' and expr_type == 'string':
-                self.add_line(t._concat(), self.footer)
+                func = lookup_in_global_symtable('concat')
+                if not func.is_generated():
+                    func.mark_generated()
+                    self.add_line(t._concat(), self.footer)
 
             self.add_line(
                 t._binary_operation(operation, expr_type)

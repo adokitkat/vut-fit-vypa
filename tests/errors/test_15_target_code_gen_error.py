@@ -63,8 +63,8 @@ SET [$SP], [$FP + 1]
 ADDI $SP, $SP, 1
 
 # Print: [Identifier | a, Identifier | b]
-WRITEI [$SP -2]
-WRITEI [$SP -1]
+WRITEI [$SP - 2]
+WRITEI [$SP - 1]
 SUBI $SP, $SP, 2
 
 JUMP __END
