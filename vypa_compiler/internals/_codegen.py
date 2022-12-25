@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import sys
 
-from vypa_compiler.internals._utils import ExitCode
+from vypa_compiler.internals._utils import DEBUG, ExitCode
 from vypa_compiler.internals._models import symbol_table, lookup_in_global_symtable, lookup_variable_in_symtable, Scope, sematic_check_return_type, sematic_func_call_arguments_check, sematic_check_assign
 from vypa_compiler.internals._ast import Node
 from vypa_compiler.internals._instructions import Instruction
@@ -98,8 +98,9 @@ class CodeGenerator:
 
         if ast is None:
             return
-
-        print(repr(ast))
+        
+        if DEBUG == True:
+            print(repr(ast))
 
         if ast.name == 'root':
             if ast.type == 'Function':

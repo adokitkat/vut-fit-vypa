@@ -5,7 +5,7 @@
 # Authors: Adam Múdry (xmudry01), Daniel Paul (xpauld00)
 
 import ply.yacc as yacc
-from vypa_compiler.internals._utils import eprint, ExitCode
+from vypa_compiler.internals._utils import eprint, ExitCode, DEBUG
 from vypa_compiler.internals._lexer import make_lexer, tokens
 
 """VYPa Compiler Project 2022
@@ -275,7 +275,7 @@ def p_error(p):
 
 # Runs PLY parser
 def make_parser():
-    parser = yacc.yacc(tabmodule="parse_table", outputdir="vypa_compiler/generated")
+    parser = yacc.yacc(tabmodule="parse_table", outputdir="vypa_compiler/generated", debug=DEBUG)
     return parser
 
 if __name__ == "__main__":

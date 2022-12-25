@@ -11,7 +11,7 @@ Main source file
 
 import os, sys
 
-from vypa_compiler.internals._utils import eprint, ExitCode
+from vypa_compiler.internals._utils import eprint, ExitCode, DEBUG
 from vypa_compiler.internals._lexer import make_lexer
 from vypa_compiler.internals._parser import make_parser
 from vypa_compiler.internals._models import symbol_table, add_built_in_functions_to_symtable, Program, Scope
@@ -24,8 +24,6 @@ __credits__ = ["Adam Múdry", "Daniel Paul"]
 
 __license__ = "MIT"
 __version__ = "0.0.1"
-
-DEBUG = True
 
 def compile(source_string: str) -> str:
     """Compiles the source string and returns the result"""

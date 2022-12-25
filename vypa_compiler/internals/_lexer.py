@@ -8,7 +8,7 @@ import re
 
 import ply.lex as lex
 
-from vypa_compiler.internals._utils import eprint, ExitCode
+from vypa_compiler.internals._utils import eprint, ExitCode, DEBUG
 
 """VYPa Compiler Project 2022
 
@@ -114,7 +114,7 @@ def t_error(t):
 
 # Runs PLY lexer
 def make_lexer():
-     lexer = lex.lex(reflags=re.UNICODE|re.VERBOSE)
+     lexer = lex.lex(reflags=re.UNICODE|re.VERBOSE, debug=DEBUG)
      return lexer
 
 if __name__ == "__main__":

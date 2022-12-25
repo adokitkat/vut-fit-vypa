@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+from vypa_compiler.internals._utils import DEBUG
 from vypa_compiler.internals._models import symbol_table, Function
 
 # Represents a node of the abstract syntax tree
@@ -27,8 +28,9 @@ class Node:
 
     def display(self):
         lines, *_ = self._display_aux()
-        for line in lines:
-            print(line)
+        if DEBUG == True:
+            for line in lines:
+                print(line)
 
     def _display_aux(self):
         """Returns list of strings, width, height, and horizontal coordinate of the root."""

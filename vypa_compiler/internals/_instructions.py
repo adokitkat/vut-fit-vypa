@@ -224,7 +224,3 @@ class Instruction:
         
         id (stack/reg/imm)'''
         return f"DUMPCHUNK {id}"
-
-if __name__ == "__main__":
-    i = Instruction
-    print(i._writes("yolo"))

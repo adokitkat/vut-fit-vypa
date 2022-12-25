@@ -7,6 +7,8 @@
 import sys
 from enum import IntEnum
 
+DEBUG = False
+
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
