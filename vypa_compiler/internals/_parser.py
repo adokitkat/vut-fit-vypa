@@ -13,8 +13,6 @@ from vypa_compiler.internals._lexer import make_lexer, tokens
 Parser implementation
 """
 
-# TODO
-
 precedence = (
     ('left', 'LOR'),
     ('left', 'LAND'),
@@ -86,7 +84,6 @@ def p_class_body(p):
     '''class_body : LBRACE class_member_list RBRACE'''
     p[0] = ("class-body", p[2])
 
-# ("class" , "definition" , int id, void Shape, string toString, None
 def p_class_member_list(p):
     '''class_member_list : class_member'''
     p[0] = ("class-member-list", p[1])
@@ -112,7 +109,7 @@ def p_class_next_member_none(p):
     '''class_next_member : empty'''
     p[0] = ("class-next-member", None)
     
-# VARIABLE TYPE TODO: REMOVE VOID? 
+# VARIABLE TYPE 
 def p_var_type(p):
     '''var_type : INT
                 | STRING
@@ -121,7 +118,7 @@ def p_var_type(p):
     p[0] = ("var-type", p[1])
 
 # STATEMENTS
-def p_statement(p): # TODO
+def p_statement(p):
     '''statement : var_def statement
                  | var_assignment statement
                  | statement_expr statement
@@ -143,17 +140,6 @@ def p_statement_new_scope(p):
 def p_statement_scope_end(p):
     '''statement_scope_end : empty'''
     p[0] = ("statement-scope-end", None)
-#      # Action code
-#      ...
-#      pop_scope()        # Return to previous scope
- 
-# def p_new_scope(p):
-#     '''new_scope :'''
-#     p[0] = ("new-scope")
-#      # Create a new scope for local variables
-#      s = new_scope()
-#      push_scope(s)
-#      ...
 
 def p_if_statement(p):
     '''statement_if : IF LPAREN expr RPAREN statement_new_scope ELSE statement_new_scope'''
@@ -175,19 +161,6 @@ def p_statement_this(p):
     '''statement_this : THIS PERIOD ID EQUALS expr SEMI
                       | SUPER PERIOD ID EQUALS expr SEMI'''
     p[0] = ("statement-this-assignment", p[1], p[3], p[5])
-
-"""
-class A {
-    int a;
-    void bar() { print("bar"); }
-    void foo(int x) {
-        int h;
-        h = this.a;
-        this.bar();
-        this.a = x;
-    }
-}
-"""
 
 def p_statement_id(p):
     '''statement_id : ID PERIOD ID EQUALS expr SEMI'''
@@ -231,15 +204,16 @@ def p_expr_value_string(p):
     p[0] = ("expression-value", 'string', p[1])
     
 def p_expr_arithmetic_operation_unary(p):
-    '''expr : MINUS expr'''
-    p[0] = ("expression-arithmetic-unary", p[1], p[2])#p[2], p[1]), p[3]) # ???
+    '''expr : MINUS expr
+            | PLUS expr'''
+    p[0] = ("expression-arithmetic-unary", p[1], p[2])
 
 def p_expr_arithmetic_operation(p):
     '''expr : expr PLUS expr
             | expr MINUS expr
             | expr TIMES expr
             | expr DIVIDE expr'''
-    p[0] = ("expression-arithmetic-binary",p[2], p[1], p[3])# p[1], p[3], p[2]) # 
+    p[0] = ("expression-arithmetic-binary",p[2], p[1], p[3])
 
 def p_expr_logical_operation_unary(p):
     '''expr : LNOT expr'''
@@ -248,7 +222,7 @@ def p_expr_logical_operation_unary(p):
 def p_expr_logical_operation(p):
     '''expr : expr LOR expr
             | expr LAND expr'''
-    p[0] = ("expression-logical-binary", p[2], p[1], p[3]) # Možno zmeniť na postfix?
+    p[0] = ("expression-logical-binary", p[2], p[1], p[3])
 
 def p_expr_relational_operation(p):
     '''expr : expr LT expr
@@ -264,7 +238,6 @@ def p_expr_cast(p):
             | LPAREN STRING RPAREN expr'''
     p[0] = ("expression-cast", p[2], p[4])
 
-# new Rectangle, this.id, rec.value(), this.value(), super.value()
 def p_expr_class_new(p):
     '''expr : NEW ID'''
     p[0] = ("expression-class-new", p[2])
@@ -283,7 +256,6 @@ def p_expr_function_call(p):
     else:
         p[0] = ("expression-function-call", p[1], None)
 
-# value(a,)
 def p_expr_list(p): 
     '''expr_list : expr next_expr'''
     p[0] = ("expression-list", p[1], p[2])
@@ -301,6 +273,7 @@ def p_error(p):
     eprint("Syntax error in input! | Type: %s | Value: %s" % (p.type, p.value))
     exit(ExitCode.ERR_SYN)
 
+# Runs PLY parser
 def make_parser():
     parser = yacc.yacc(tabmodule="parse_table", outputdir="vypa_compiler/generated")
     return parser

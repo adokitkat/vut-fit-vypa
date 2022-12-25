@@ -10,7 +10,6 @@ Main source file
 """
 
 import os, sys
-import pprint
 
 from vypa_compiler.internals._utils import eprint, ExitCode
 from vypa_compiler.internals._lexer import make_lexer
@@ -25,9 +24,6 @@ __credits__ = ["Adam Múdry", "Daniel Paul"]
 
 __license__ = "MIT"
 __version__ = "0.0.1"
-
-SOURCE_FILE = ""
-OUTPUT_FILE = "out.vc"
 
 DEBUG = True
 
@@ -47,6 +43,9 @@ def compile(source_string: str) -> str:
     return str(generator)
 
 def main():
+    SOURCE_FILE = ""
+    OUTPUT_FILE = "out.vc"
+
     args = sys.argv[1:]
     if (argc := len(args)) == 1:
         SOURCE_FILE = args[0]
@@ -79,18 +78,9 @@ def main():
     
     parser = make_parser()
     parsed = parser.parse(input_data, tracking=True)
-    print("Simulation of derivation tree:")
-    pprint.pprint(parsed)
-
     symbol_table.append(Scope()) # global scope
     add_built_in_functions_to_symtable()
-    #parsed_list = convert_to_lists(parsed)
-    #pprint.pprint(parsed_list, indent=4)
     program = Program(parsed)
-    print(program)
-    print(symbol_table)
-    #print([x.symtable for x in program.classes])
-    #print(list(symbol_table[0].scope.values())[0].symtable)
     asts = generate_functions(symbol_table)
     generator = CodeGenerator(asts)
     generator.generate()

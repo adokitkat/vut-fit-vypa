@@ -10,6 +10,7 @@ from enum import IntEnum
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
+# Performs lookup in derivation tree
 def sublist_lookup(lst, target):
     result = []
     found = False
@@ -22,19 +23,6 @@ def sublist_lookup(lst, target):
         elif item == target:
             found = True
     return result
-
-#def convert_to_lists(data):
-#    result = []
-#    for element in data:
-#        if isinstance(element, str):
-#            result.append(element)
-#        elif isinstance(element, tuple):
-#            # Recursively process the tuple and add the result to the list
-#            result.append(convert_to_lists(element))
-#        else:
-#            # Add the element to the list
-#            result.append(element)
-#    return result
 
 class ExitCode(IntEnum):
     ERR_LEX = 11

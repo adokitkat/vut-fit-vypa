@@ -4,22 +4,27 @@
 # Project name: Compiler Implementation for VYPlanguage Programming Language
 # Authors: Adam Múdry (xmudry01), Daniel Paul (xpauld00)
 
+from __future__ import annotations
+
 import os
 
 from vypa_compiler.internals._utils import eprint, ExitCode, sublist_lookup
 
 symbol_table = []
 
+
 def sematic_type_check(expected_type, type):
     if expected_type != type: 
         eprint(f"Incompatible assign value, expected {expected_type}, got {type}")
         exit(ExitCode.ERR_SEM_TYPE_INCOMP) # Incompatible type
 
+# Checks for sematic assign error
 def sematic_check_assign(ast):
 	left_type = lookup_variable_in_symtable(ast.left.value).var_type
 	right_type = sematic_check_expr(ast.right)
 	sematic_type_check(left_type, right_type)
 
+# Checks type of expression
 def sematic_check_expr(ast):
 	if ast.type == 'Unary':
 		return 'int'
@@ -41,7 +46,7 @@ def sematic_check_expr(ast):
 	elif ast.name == 'Expression-cast':
 		return ast.left.value
 	
-
+# Checks the type and number of arguments in function call
 def sematic_func_call_arguments_check(function, ast):
     if ast.right:
         arguments_in_call = sematic_get_function_arguments_type(ast.right)
@@ -55,7 +60,7 @@ def sematic_func_call_arguments_check(function, ast):
             eprint(f"Incompatible argument type in function {function.name}, expected {type2}, got {type1}")
             exit(ExitCode.ERR_SEM_TYPE_INCOMP) # Incompatible type
 	
-
+# Helper function to get argument types of called function
 def sematic_get_function_arguments_type(ast):
     parameters = []
     if ast.name == 'Expression-list' or ast.name == 'Next-expression':
@@ -68,13 +73,14 @@ def sematic_get_function_arguments_type(ast):
                 parameters += returned_parameters
     return parameters
 
+# Sematic check if returned type equals return type of the function
 def sematic_check_return_type(function,ast):
     return_type = sematic_check_expr(ast.left)
     if return_type != function.return_type:
         eprint(f"Incompatible return value, expected {function.return_type}, got {return_type}")
         exit(ExitCode.ERR_SEM_TYPE_INCOMP) # Incompatible type
 
-
+# Lookup in global symtable for functions and classes
 def lookup_in_global_symtable(name):
     lookup = symbol_table[0].lookup(name)
     if lookup is not None:
@@ -83,6 +89,7 @@ def lookup_in_global_symtable(name):
         eprint(f"Missing definition (global)): {name}")
         exit(ExitCode.ERR_SEM_REST) # Missing definition
 
+# Lookup in local symtables for variables
 def lookup_variable_in_symtable(name):
     for scope in reversed(symbol_table):
         if scope is symbol_table[0]: # We don't want to search in global scope for variables
@@ -94,6 +101,7 @@ def lookup_variable_in_symtable(name):
     eprint(f"Missing definition: {name}")
     exit(ExitCode.ERR_SEM_REST) # Missing definition
 
+# Checks if a variable exists in the scope and returns offset and the scope
 def exists_in_symtable(name):
     offset = 0
     found = False
@@ -109,6 +117,7 @@ def exists_in_symtable(name):
             found = True
             found_scope = scope
 
+# Represents scope
 class Scope:
 
     def __init__(self):
@@ -137,6 +146,7 @@ class Scope:
     def __repr__(self):
         return f"{[(key,type(value)) for key,value in self.scope.items()]}"
 
+# Represents a variable
 class Variable:
 
     def __init__(self, var_type: str, name: str):
@@ -147,6 +157,7 @@ class Variable:
     def __repr__(self):
         return f"Variable: ({self.name=}, {self.var_type=})"
 
+# Represents a function
 class Function:
     
     def __init__(self, name: str, arguments: list, return_type: str, body, class_this=None):
@@ -170,6 +181,7 @@ class Function:
     def __repr__(self):
         return f"Function: ({self.name=}, {self.return_type=}, args={['this=' + x.name if isinstance(x, Class) else x for x in self.arguments]})"
 
+# Represents a class
 class Class():
 
     def __init__(self, name, superclass, class_members):
@@ -204,7 +216,6 @@ class Class():
                 # Add function to class symtable
                 self.symtable.add(x.name, x)
 
-    # Process int height,width
     def process_next_var(self, next_variables, var_type):
         for var in next_variables:
             x = Variable(var_type=var_type, name=var)
@@ -216,6 +227,7 @@ class Class():
         return f"""Class {self.name}:
 {os.linesep.join([f"{' '*8}{repr(x)}" for x in self.members])}"""
 
+# Represents a program
 class Program:
 
     def __init__(self, parsed_list):
@@ -246,6 +258,7 @@ class Program:
 {os.linesep.join([f"{' '*4}{repr(x)}" for x in self.classes])}
 {os.linesep.join([f"{' '*4}{repr(x)}" for x in self.functions])}"""
 
+# Adds built-in functions to the global symtable
 def add_built_in_functions_to_symtable():
     if not symbol_table[0].exists('readInt'):
         symbol_table[0].add('readInt', Function(name='readInt', arguments=[], return_type='int', body=None))
@@ -256,3 +269,6 @@ def add_built_in_functions_to_symtable():
     if not symbol_table[0].exists('subStr'):
         symbol_table[0].add('subStr', Function(name='subStr', arguments=[Variable(var_type='string', name='s'), Variable(var_type='int', name='i'), Variable(var_type='int',name='n')], return_type='string', body=None))
     #Function(name='print',arguments=["?"], return_type='void', body=None)
+    if not symbol_table[0].exists('concat'):
+        symbol_table[0].add('concat', Function(name='concat', arguments=[Variable(var_type='string', name='s1'), Variable(var_type='string', name='s2')], return_type='string', body=None))
+    

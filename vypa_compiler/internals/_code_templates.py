@@ -4,6 +4,9 @@
 # Project name: Compiler Implementation for VYPlanguage Programming Language
 # Authors: Adam Múdry (xmudry01), Daniel Paul (xpauld00)
 
+from __future__ import annotations
+
+from vypa_compiler.internals._utils import eprint, ExitCode
 from vypa_compiler.internals._models import symbol_table, lookup_in_global_symtable, lookup_variable_in_symtable, Scope, Variable, Function, Class, Program, exists_in_symtable
 from vypa_compiler.internals._ast import Node
 from vypa_compiler.internals._instructions import Instruction
@@ -173,12 +176,7 @@ class CodeTemplate:
 
     @staticmethod
     def _func_call(func_name, args) -> str:
-        ret = [f"# Save parameters to stack: {args}"]
-        # for arg in args: # TODO: <---
-        #    ret += [
-        #        i._set(f"[{SP}]", f"[{FP} + {__class__._var_offset(arg.value)}]"),
-        #        __class__._inc_reg(SP)
-        #    ]
+        ret = [f"# Parameters on stack: {args}"]
         ret += [
             f"# Call function: {func_name}",
             i._set(f"[{SP}]", FP), # Save PC to stack
@@ -213,7 +211,7 @@ class CodeTemplate:
     @staticmethod
     def _declare_variable(var_type, name) -> str: 
         symbol_table[-1].add(name, Variable(var_type, name))
-        ret = [f"# Created variable: {name}"]
+        ret = [f"# Created variable: {var_type} {name}"]
         if var_type == 'string':
             ret += [
                 i._create(chunkP, 1),
@@ -254,7 +252,6 @@ class CodeTemplate:
         
         if current_function == 'main':
             return i._jump('__END')
-            return i._jump('__END')
             
         len_params = len(lookup_in_global_symtable(current_function).arguments)
         ret = [
@@ -270,12 +267,17 @@ class CodeTemplate:
         return '\n'.join(ret) + '\n'
 
     @staticmethod
-    def _unary_minus():
-        ret = [
-            f'# Unary minus expression',
-            i._subi(exprR1, 0, f'[{SP} - 1]'),
-            i._set(f'[{SP} - 1]', exprR1)
-        ]
+    def _unary_arithmetic_op(op):
+        if op == '-':
+            ret = [
+                f'# Unary arithmetic expression -',
+                i._subi(exprR1, 0, f'[{SP} - 1]'),
+                i._set(f'[{SP} - 1]', exprR1)
+            ]
+        else:
+            ret = [
+                f'# Unary arithmetic expression +',
+            ]  
         return '\n'.join(ret) + '\n'
 
     @staticmethod
@@ -285,6 +287,9 @@ class CodeTemplate:
         else:
             postfix = 'I'
         if op in binaryOpMap.keys():
+
+            if op == '+' and exprType == 'string':
+                return __class__._func_call('concat', '2 strings')
 
             if op in ['||', '&&']:
                 logical = f'{binaryOpMap[op]} {exprR1}, [{SP} - 2], [{SP} - 1]'
@@ -317,6 +322,10 @@ class CodeTemplate:
                     f'SET [{SP} - 2], {exprR1}',
                     __class__._dec_reg(SP)
                     ]
+        else:
+            eprint('Semantic error')
+            exit(ExitCode.ERR_SEM_REST)
+
         return '\n'.join(ret) + '\n'
 
 
@@ -356,7 +365,7 @@ class CodeTemplate:
         ret = [f"# Print: {parameters}"]
         for index, param in enumerate(parameters):
             neg_offset = abs(- l + index)
-            if param.name == 'Int-Literal' or param.type == 'Binary':
+            if param.name == 'Int-Literal':
                 ret += [i._writei(f"[{SP} - {neg_offset}]")]
             
             elif param.name == "String-Literal":
@@ -370,6 +379,20 @@ class CodeTemplate:
                 else:
                     ret += [i._writei(f"[{SP} - {neg_offset}]")]
             
+            elif param.type == 'Binary':
+                if param.left.value is not None:
+                    if param.left.name == 'Int-Literal':
+                        ret += [i._writei(f"[{SP} - {neg_offset}]")]
+                    elif param.left.name == 'String-Literal':
+                        ret += [i._writes(f"[{SP} - {neg_offset}]")]
+                    elif param.left.name == 'Identifier':
+                        lookup = lookup_variable_in_symtable(param.left.value)
+                        out_type = lookup.var_type
+                        if out_type == 'string':
+                            ret += [i._writes(f"[{SP} - {neg_offset}]")]
+                        else:
+                            ret += [i._writei(f"[{SP} - {neg_offset}]")]
+
             elif param.name == 'Function-call':
                 lookup = lookup_in_global_symtable(param.value)
                 out_type = lookup.return_type
@@ -381,7 +404,6 @@ class CodeTemplate:
         ret += [i._subi(SP, SP, len(parameters))]
         return '\n'.join(ret) + '\n'
 
-    # TODO: treba??
     @staticmethod
     def _read_int_stack() -> str:
         ret = [
@@ -407,4 +429,90 @@ class CodeTemplate:
             #i._return(f"[{SP}]")
         ]
         return '\n'.join(ret) + '\n'
-    
+
+    @staticmethod
+    def _length() -> str:
+        ret = [
+            f"# Length function",
+            i._label("length"),
+            i._get_size(miscR1, f'[{SP} - 2]'),
+            i._subi(SP, SP, 1),
+            i._set(resultR, miscR1),
+            i._return(f'[{SP} + 1]')
+            ]
+        return '\n'.join(ret) + '\n'
+
+    @staticmethod
+    def _concat() -> str:
+        ret = [
+            i._label("concat"),
+            i._get_size(exprR1, f'[{SP} - 3]'), # string 1
+            i._get_size(exprR2, f'[{SP} - 2]'), # string 2
+            i._copy(chunkP, f'[{SP} - 3]'),
+            i._addi(miscR2, exprR1, exprR2), # total length
+            i._resize(chunkP, miscR2),
+            i._set(resultR, 0),
+            i._label("concat_start"),
+            i._lti(miscR2, resultR, exprR2),
+            i._jumpz("concat_end", miscR2),
+            i._get_word(miscR2, f'[{SP} - 2]', resultR),
+            i._addi(miscR1, resultR, exprR1),
+            i._set_word(chunkP, miscR1, miscR2),
+            __class__._inc_reg(resultR),
+            i._jump("concat_start"),
+            i._label("concat_end"), 
+            __class__._dec_reg(SP, 3),
+            i._set(resultR, chunkP),
+            #__class__._inc_reg(SP),
+            i._return(f'[{SP} + 3]')
+        ]
+        return '\n'.join(ret) + '\n'
+
+    @staticmethod
+    def _substring() -> str: # TODO: $1 -> miscR2 ; $2 -> resultR
+        ret = [
+            f"# Substring function",
+            i._label('subStr'),
+            i._get_size(miscR1, f'[{SP} - 4]'),
+            i._gti(exprR1, f'[{SP} - 3]', miscR1),
+            i._lti(exprR2, f'[{SP} - 3]', 0),
+            i._or(exprR1, exprR1, exprR2),
+            i._jumpz('__substr_start', exprR1),
+            i._create(chunkP, 1),
+            i._set_word(chunkP, 0, '""'),
+            i._get_word(chunkP, chunkP, 0),
+            i._jump("substr_end"),
+
+            i._label("__substr_start"),
+            i._create(chunkP, f'[{SP} - 2]'),
+            i._set(exprR1, f'[{SP} - 3]'),
+            i._set(resultR, 0),
+            i._addi(miscR2, exprR1, f'[{SP} - 2]'),
+            i._lti(miscR2, miscR2, miscR1),
+            i._jumpnz('substr_start', miscR2),
+            i._subi(miscR2, miscR1, exprR1),
+
+            i._resize(chunkP, miscR2),
+
+            i._label('substr_start'),
+            i._lti(miscR2, exprR1, miscR1),
+            i._jumpz('substr_end', miscR2),
+
+            i._lti(miscR2, resultR, f'[{SP} - 2]'), # TODO: $1 -> miscR2 ; $2 -> resultR
+            i._jumpz('substr_end', miscR2),
+
+            i._get_word(miscR2, f'[{SP} - 4]', exprR1),
+            i._set_word(chunkP, resultR, miscR2),
+
+            __class__._inc_reg(resultR),
+            __class__._inc_reg(exprR1),
+            i._jump('substr_start'),
+            i._label('substr_end'),
+
+            __class__._dec_reg(SP, 4),
+            #i._set(f'[{SP}]', chunkP),
+            i._set(resultR, chunkP),
+            #__class__._inc_reg(SP),
+            i._return(f'[{SP} + 4]')
+        ]
+        return '\n'.join(ret) + '\n'

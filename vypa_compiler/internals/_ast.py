@@ -4,8 +4,11 @@
 # Project name: Compiler Implementation for VYPlanguage Programming Language
 # Authors: Adam Múdry (xmudry01), Daniel Paul (xpauld00)
 
+from __future__ import annotations
+
 from vypa_compiler.internals._models import symbol_table, Function
 
+# Represents a node of the abstract syntax tree
 class Node:
     def __init__(self, name = None, left= None, right = None, type = None, value= None ):
         self.name = name
@@ -91,8 +94,8 @@ class Node:
         return ' | '.join(ret)
 
 
-
-built_in_functions = ['readInt', 'readString', 'length', 'subStr', 'print']
+# Generates abstract syntax tree for each function from derivation tree
+built_in_functions = ['readInt', 'readString', 'length', 'subStr', 'print', 'concat']
 def generate_functions(sym_tab) -> list[Node]:
     asts = []
     for key, value in sym_tab[0].scope.items():
@@ -104,7 +107,7 @@ def generate_functions(sym_tab) -> list[Node]:
     return asts
 
 
-
+# Generates abstract syntax tree for a function
 def generate(root, body):
     
     if body == None:
@@ -120,7 +123,7 @@ def generate(root, body):
         # ("statement", special_stmt, stmt/None)
         root.name = 'Statement'
         root.left = Node()
-        generate(root.left, body[1]) #(statement,(...),(statement,(...),(statement,...)))
+        generate(root.left, body[1])
         if (body[2] != None):
             root.right = Node()
             generate(root.right, body[2])

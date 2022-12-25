@@ -78,8 +78,6 @@ t_EQUALS = r'='
 
 t_LPAREN   = r'\('
 t_RPAREN   = r'\)'
-#t_LBRACKET = r'\['
-#t_RBRACKET = r'\]'
 t_LBRACE   = r'\{'
 t_RBRACE   = r'\}'
 t_COMMA    = r','
@@ -108,16 +106,13 @@ def t_MULTI_COMMENT(t):
 
 def t_COMMENT(t):
     r'//.*'
-    #t.lexer.lineno += 1
     pass
 
 def t_error(t):
     eprint('Lexical error | Line: %d | Symbol: %s | %s' % (t.lineno, repr(t.value[0]), find_column(t.value[0], t))) 
-    #t.lexer.skip(1)
-    # TODO: Use t.lexer.lineno to indicade line number of illegal input input?
-    #       Quit after error and return ERR_LEX?
     exit(ExitCode.ERR_LEX)
 
+# Runs PLY lexer
 def make_lexer():
      lexer = lex.lex(reflags=re.UNICODE|re.VERBOSE)
      return lexer

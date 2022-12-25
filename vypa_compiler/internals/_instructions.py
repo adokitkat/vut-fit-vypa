@@ -4,9 +4,12 @@
 # Project name: Compiler Implementation for VYPlanguage Programming Language
 # Authors: Adam Múdry (xmudry01), Daniel Paul (xpauld00)
 
+from __future__ import annotations
+
 from vypa_compiler.internals._utils import eprint, ExitCode
 from vypa_compiler.internals._models import symbol_table, Variable
 
+# Represents instructions
 class Instruction:
 
     @staticmethod
@@ -18,10 +21,7 @@ class Instruction:
     @staticmethod
     def _create(dst, size):
         '''dst (reg), size (stack/reg/imm)'''
-        if size >= 0:
-            return f"CREATE {dst}, {size}"
-        else:
-            exit(ExitCode.ERR_TARGET_CODE_GEN) # Should not happen
+        return f"CREATE {dst}, {size}"
 
     @staticmethod
     def _copy(dst, id):
