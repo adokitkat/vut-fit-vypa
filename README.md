@@ -8,11 +8,19 @@ Simplified project structure:
 ├── tests                      Test files
 │   └── ...
 ├── vypa_compiler              Compiler source files
-│   ├── compiler.py            Main source file
-│   └── internals
-│       ├── _utils.py          Utility functions
-│       ├── _lexer.py          Lexer implementation
-│       └── _parser.py         Parser implementation
+│   ├── generated
+│   │   └── ...
+│   ├── internals
+│   │   ├── _ast.py            Abstract syntax tree implementation
+│   │   ├── _code_templates.py Instruction templates
+│   │   ├── _codegen.py        Code generation implementation
+│   │   ├── _instructions.py   Target instructions
+│   │   ├── _lexer.py          Lexer implementation
+│   │   ├── _model.py          Symbol table, semantics, etc.
+│   │   ├── _parser.py         Parser implementation
+│   │   └── _utils.py          Utility functions
+│   └── compiler.py            Main source file
+│
 ├── .gitignore
 ├── LICENSE
 ├── Makefile                   Makefile script
